@@ -1,0 +1,1 @@
+{ "name": "@undertow/db", "version": "1.0.0", "main": "index.ts", "scripts": { "generate": "drizzle-kit generate", "push": "drizzle-kit push" } }
