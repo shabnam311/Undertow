@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #0D1512;
+  --color-ledger: #141F1B;
+  --color-paper: #EDE7DA;
+  --color-brass: #C89B3C;
+  --color-rust: #B5563A;
+  --color-current-teal: #3C7A6E;
+
+  --font-display: "Fraunces", serif;
+  --font-body: "Public Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  /* Sharp, mostly square corners throughout */
+  --radius-sm: 0px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 2px;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-ink);
+    color: var(--color-paper);
+    font-family: var(--font-body);
+  }
+
+  /* Status badges: small rectangular stamped tags with hairline border */
+  .badge {
+    @apply border border-current-teal text-current-teal px-2 py-0.5 text-xs font-mono uppercase tracking-wider;
+  }
+}
