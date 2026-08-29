@@ -1,25 +1,13 @@
 import { createRoute } from '@tanstack/react-router';
 import { Route as rootRoute } from './__root';
 import { useEffect, useRef, useState } from 'react';
+import { trpc } from '../../src/trpc';
 
 export const Route = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   component: QueueView,
 });
-
-const CASES = [
-  {id: 1, name:"Kavya Menon", sub:"UPI · repeat customer", cause:"Issuer risk block", tier:2, amt:"₹18,400", status:"escalated", trend:[3,4,3,5,6,5,7]},
-  {id: 2, name:"Whitefield Fabrics", sub:"Invoice INV-2291 · 12d overdue", cause:"Buyer approval delay", tier:1, amt:"₹2,84,000", status:"sent", trend:[2,2,3,3,4,4,4]},
-  {id: 3, name:"Rohit Bhatia", sub:"Card · first decline", cause:"Insufficient funds", tier:1, amt:"₹4,200", status:"diagnosing", trend:[1,1,2,2,2,3,3]},
-  {id: 4, name:"Nimble Retail Co.", sub:"Invoice INV-2277 · 34d overdue", cause:"Disputed, service issue", tier:0, amt:"₹1,12,500", status:"detected", trend:[5,5,4,4,3,3,3]},
-  {id: 5, name:"Priya Suresh", sub:"UPI Autopay · mandate", cause:"Mandate failure", tier:1, amt:"₹899", status:"sent", trend:[2,3,3,4,4,5,5]},
-  {id: 6, name:"Kestrel Apparel", sub:"Invoice INV-2304 · 4d overdue", cause:"Buyer approval delay", tier:0, amt:"₹96,000", status:"detected", trend:[1,2,2,3,3,4,4]},
-  {id: 7, name:"Farhan Sheikh", sub:"Card · expired instrument", cause:"Instrument expired", tier:2, amt:"₹6,750", status:"escalated", trend:[4,5,5,6,6,7,8]},
-  {id: 8, name:"Meera Iyer", sub:"Checkout · abandoned", cause:"Checkout friction", tier:1, amt:"₹3,100", status:"sent", trend:[2,2,3,3,3,4,4]},
-  {id: 9, name:"Alkem Traders", sub:"Invoice INV-2266 · 41d overdue", cause:"Buyer approval delay", tier:3, amt:"₹4,40,000", status:"escalated", trend:[6,6,7,7,8,8,9]},
-  {id: 10, name:"Devika Nair", sub:"Card · recovered today", cause:"Issuer risk block", tier:1, amt:"₹12,000", status:"recovered", trend:[3,4,4,3,2,1,0]}
-];
 
 function sparkPath(vals: number[], w: number, h: number) {
   const max = Math.max(...vals), min = Math.min(...vals);
@@ -35,6 +23,7 @@ function sparkPath(vals: number[], w: number, h: number) {
 function QueueView() {
   const [selectedCaseId, setSelectedCaseId] = useState(1);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const casesQuery = trpc.cases.list.useQuery();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -154,7 +143,7 @@ function QueueView() {
               </tr>
             </thead>
             <tbody id="queue-body">
-              {CASES.map(c => {
+              {casesQuery.data?.map(c => {
                 const path = sparkPath(c.trend, 64, 20);
                 const sparkColor = c.status === 'recovered' ? '#C89B3C' : (c.status === 'escalated' ? '#B5563A' : '#3C7A6E');
                 const isSelected = selectedCaseId === c.id;
