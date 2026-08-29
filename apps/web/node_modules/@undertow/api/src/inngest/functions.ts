@@ -1,4 +1,5 @@
 import { inngest } from './client';
+import { compiledWorkflow } from '../agent/workflow';
 
 export const processRiskEvent = inngest.createFunction(
   { id: 'process-risk-event' },
@@ -17,7 +18,8 @@ export const processRiskEvent = inngest.createFunction(
     // 2. Diagnose node (LLM call via LangGraph)
     const diagnosis = await step.run('diagnose-root-cause', async () => {
       // Call LangGraph workflow here
-      return { rootCause: 'insufficient_funds', confidence: 90 };
+      const state = await compiledWorkflow.invoke({ event: event.data });
+      return { rootCause: state.diagnosis?.rootCause, confidence: state.diagnosis?.confidence };
     });
 
     // 3. Decide node (policy table)

@@ -1,0 +1,1022 @@
+[
+  {
+    "id": "004732d8-d845-4d03-89cb-b4eef41b83f6",
+    "merchantId": "merchant-test-1",
+    "customerId": "668ae7d1-952b-4c14-9b9a-013580534472",
+    "customerName": "Alkem Traders",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "payment_failed",
+      "amountPaise": 38555100,
+      "currency": "INR",
+      "occurredAt": "2026-07-24T01:59:22.938Z"
+    },
+    "rootCause": "expired_or_invalid_instrument",
+    "amountAtRiskPaise": 38555100,
+    "status": "recovered",
+    "tier": 2
+  },
+  {
+    "id": "665d757f-4c1f-4473-83c1-3d87253da353",
+    "merchantId": "merchant-test-1",
+    "customerId": "d854b6c5-e33b-4aff-a0d1-603f03af548e",
+    "customerName": "Rohit Bhatia",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 31888700,
+      "currency": "INR",
+      "occurredAt": "2026-07-21T01:59:22.938Z"
+    },
+    "rootCause": "buyer_side_approval_delay",
+    "amountAtRiskPaise": 31888700,
+    "status": "recovered",
+    "tier": 4
+  },
+  {
+    "id": "7518dc75-1919-4d38-ab39-008a26a45ac8",
+    "merchantId": "merchant-test-1",
+    "customerId": "3043213d-274b-4e4b-ac72-058affad68c6",
+    "customerName": "Startup Inc",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "mandate_failed",
+      "amountPaise": 6677200,
+      "currency": "INR",
+      "occurredAt": "2026-08-12T01:59:22.938Z"
+    },
+    "rootCause": "buyer_side_approval_delay",
+    "amountAtRiskPaise": 6677200,
+    "status": "recovered",
+    "tier": 3
+  },
+  {
+    "id": "95b3c790-63c9-417f-9da4-966fdd58f71c",
+    "merchantId": "merchant-test-1",
+    "customerId": "eeabecf4-aefa-4fef-b71a-b745edf9453b",
+    "customerName": "Rohit Bhatia",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "payment_failed",
+      "amountPaise": 33514700,
+      "currency": "INR",
+      "occurredAt": "2026-08-13T01:59:22.938Z"
+    },
+    "rootCause": "undiagnosable",
+    "amountAtRiskPaise": 33514700,
+    "status": "detected",
+    "tier": 1
+  },
+  {
+    "id": "e6c822a8-535a-4f50-90a3-ef72557e28c3",
+    "merchantId": "merchant-test-1",
+    "customerId": "de1ee6f1-9e4e-4ec4-af6a-7def07aa346f",
+    "customerName": "Meera Iyer",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "mandate_failed",
+      "amountPaise": 45198600,
+      "currency": "INR",
+      "occurredAt": "2026-08-26T01:59:22.938Z"
+    },
+    "rootCause": "checkout_friction",
+    "amountAtRiskPaise": 45198600,
+    "status": "escalated",
+    "tier": 1
+  },
+  {
+    "id": "65422800-8fd0-42ff-8388-07b54164f56d",
+    "merchantId": "merchant-test-1",
+    "customerId": "f07974d9-f255-4e55-9a84-1eba6588e79a",
+    "customerName": "Alkem Traders",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 18359900,
+      "currency": "INR",
+      "occurredAt": "2026-07-27T01:59:22.938Z"
+    },
+    "rootCause": "disputed_or_service_issue",
+    "amountAtRiskPaise": 18359900,
+    "status": "recovered",
+    "tier": 2
+  },
+  {
+    "id": "6c2464a3-c169-4673-8626-6fb6cb838231",
+    "merchantId": "merchant-test-1",
+    "customerId": "5dea6ed3-e2ce-4227-b2e5-42008c9e4d77",
+    "customerName": "Priya Suresh",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 22057700,
+      "currency": "INR",
+      "occurredAt": "2026-08-12T01:59:22.938Z"
+    },
+    "rootCause": "technical_gateway_failure",
+    "amountAtRiskPaise": 22057700,
+    "status": "escalated",
+    "tier": 4
+  },
+  {
+    "id": "d247f55d-ed79-4641-8f2c-6c877bc41cd3",
+    "merchantId": "merchant-test-1",
+    "customerId": "d6fc3573-5169-4c84-a972-8ae25d251f3c",
+    "customerName": "Priya Suresh",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "checkout_abandoned",
+      "amountPaise": 46059900,
+      "currency": "INR",
+      "occurredAt": "2026-07-25T01:59:22.938Z"
+    },
+    "rootCause": "issuer_risk_block",
+    "amountAtRiskPaise": 46059900,
+    "status": "detected",
+    "tier": 2
+  },
+  {
+    "id": "28b67dc8-c2d3-4d44-9e17-5c1af7fa7d7a",
+    "merchantId": "merchant-test-1",
+    "customerId": "a665eb11-9bf0-4a1c-8049-644e9eb9fb6f",
+    "customerName": "Acme Corp",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 31678400,
+      "currency": "INR",
+      "occurredAt": "2026-07-17T01:59:22.938Z"
+    },
+    "rootCause": "checkout_friction",
+    "amountAtRiskPaise": 31678400,
+    "status": "diagnosing",
+    "tier": 3
+  },
+  {
+    "id": "8cb9cb31-a0ae-4f27-af4b-71c03e095dee",
+    "merchantId": "merchant-test-1",
+    "customerId": "9fafb2a5-6ceb-428b-a9f2-272d1a90342d",
+    "customerName": "Acme Corp",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 21332700,
+      "currency": "INR",
+      "occurredAt": "2026-08-09T01:59:22.938Z"
+    },
+    "rootCause": "disputed_or_service_issue",
+    "amountAtRiskPaise": 21332700,
+    "status": "escalated",
+    "tier": 4
+  },
+  {
+    "id": "08382da4-3200-4361-ab6b-96381f0695e0",
+    "merchantId": "merchant-test-1",
+    "customerId": "ced0d31f-7b20-4158-8fec-e28f777e4ccc",
+    "customerName": "Farhan Sheikh",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "payment_failed",
+      "amountPaise": 27974900,
+      "currency": "INR",
+      "occurredAt": "2026-07-19T01:59:22.938Z"
+    },
+    "rootCause": "insufficient_funds",
+    "amountAtRiskPaise": 27974900,
+    "status": "intervention_sent",
+    "tier": 3
+  },
+  {
+    "id": "3bb69b5d-d6ae-409b-8c48-2e13083fc050",
+    "merchantId": "merchant-test-1",
+    "customerId": "7f05bea9-1bd6-4542-b386-e2946ed331e8",
+    "customerName": "Rohit Bhatia",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 16079600,
+      "currency": "INR",
+      "occurredAt": "2026-07-24T01:59:22.940Z"
+    },
+    "rootCause": "issuer_risk_block",
+    "amountAtRiskPaise": 16079600,
+    "status": "escalated",
+    "tier": 3
+  },
+  {
+    "id": "182fc3b9-e3a3-4d45-8c7a-bc372b06c46a",
+    "merchantId": "merchant-test-1",
+    "customerId": "3837a81d-59f7-46f5-8200-a858c9e7ae0c",
+    "customerName": "Priya Suresh",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 40292100,
+      "currency": "INR",
+      "occurredAt": "2026-08-19T01:59:22.941Z"
+    },
+    "rootCause": "expired_or_invalid_instrument",
+    "amountAtRiskPaise": 40292100,
+    "status": "recovered",
+    "tier": 3
+  },
+  {
+    "id": "2dd29334-849b-4b06-a136-772c325e425b",
+    "merchantId": "merchant-test-1",
+    "customerId": "8dda8fb7-5e7e-4706-95ec-4970dbccbcb6",
+    "customerName": "Meera Iyer",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "payment_failed",
+      "amountPaise": 46383400,
+      "currency": "INR",
+      "occurredAt": "2026-07-28T01:59:22.941Z"
+    },
+    "rootCause": "checkout_friction",
+    "amountAtRiskPaise": 46383400,
+    "status": "escalated",
+    "tier": 4
+  },
+  {
+    "id": "658abf5a-4ecb-4765-ba7e-3c23c07d4e2c",
+    "merchantId": "merchant-test-1",
+    "customerId": "a8cdf713-0782-4935-89e3-965ff8499465",
+    "customerName": "Meera Iyer",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "checkout_abandoned",
+      "amountPaise": 49744200,
+      "currency": "INR",
+      "occurredAt": "2026-08-12T01:59:22.941Z"
+    },
+    "rootCause": "issuer_risk_block",
+    "amountAtRiskPaise": 49744200,
+    "status": "escalated",
+    "tier": 2
+  },
+  {
+    "id": "cb573d92-3973-40ea-9c6c-b59e91ea2884",
+    "merchantId": "merchant-test-1",
+    "customerId": "b8523b13-4a2b-430a-910c-ea56455fa2a1",
+    "customerName": "Nimble Retail Co.",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 17950300,
+      "currency": "INR",
+      "occurredAt": "2026-08-17T01:59:22.941Z"
+    },
+    "rootCause": "issuer_risk_block",
+    "amountAtRiskPaise": 17950300,
+    "status": "diagnosing",
+    "tier": 3
+  },
+  {
+    "id": "c2d4f826-21f7-49a1-82c0-44ebf9fa80ef",
+    "merchantId": "merchant-test-1",
+    "customerId": "7ec1bfe6-349d-4d7a-b895-2092f1559dab",
+    "customerName": "Startup Inc",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "checkout_abandoned",
+      "amountPaise": 25377300,
+      "currency": "INR",
+      "occurredAt": "2026-07-21T01:59:22.941Z"
+    },
+    "rootCause": "insufficient_funds",
+    "amountAtRiskPaise": 25377300,
+    "status": "diagnosing",
+    "tier": 2
+  },
+  {
+    "id": "915bdaa9-8db0-4a15-bbab-67f1b480f464",
+    "merchantId": "merchant-test-1",
+    "customerId": "34ee1caf-1a93-4d02-83d8-2e204a680cbe",
+    "customerName": "Acme Corp",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "payment_failed",
+      "amountPaise": 19498500,
+      "currency": "INR",
+      "occurredAt": "2026-08-26T01:59:22.941Z"
+    },
+    "rootCause": "expired_or_invalid_instrument",
+    "amountAtRiskPaise": 19498500,
+    "status": "detected",
+    "tier": 3
+  },
+  {
+    "id": "f955d8c8-5a2a-45a7-b578-6dac17ec8931",
+    "merchantId": "merchant-test-1",
+    "customerId": "60f93b7c-9520-4e29-a6b7-06ebbbe724d7",
+    "customerName": "Alkem Traders",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "payment_failed",
+      "amountPaise": 2171600,
+      "currency": "INR",
+      "occurredAt": "2026-08-09T01:59:22.941Z"
+    },
+    "rootCause": "buyer_side_approval_delay",
+    "amountAtRiskPaise": 2171600,
+    "status": "intervention_sent",
+    "tier": 2
+  },
+  {
+    "id": "1f37a189-82a1-4f86-8599-6ba22d993974",
+    "merchantId": "merchant-test-1",
+    "customerId": "c5b23916-b133-4e79-b47f-945b6abad4f6",
+    "customerName": "Priya Suresh",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "checkout_abandoned",
+      "amountPaise": 22372200,
+      "currency": "INR",
+      "occurredAt": "2026-07-16T01:59:22.941Z"
+    },
+    "rootCause": "technical_gateway_failure",
+    "amountAtRiskPaise": 22372200,
+    "status": "detected",
+    "tier": 4
+  },
+  {
+    "id": "418e8e90-cbaa-48e5-816f-ca9691bf5f56",
+    "merchantId": "merchant-test-1",
+    "customerId": "3dc94dcb-c73e-4a60-82a1-cb8a49d90f6e",
+    "customerName": "Kavya Menon",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 18870600,
+      "currency": "INR",
+      "occurredAt": "2026-08-18T01:59:22.941Z"
+    },
+    "rootCause": "technical_gateway_failure",
+    "amountAtRiskPaise": 18870600,
+    "status": "intervention_sent",
+    "tier": 1
+  },
+  {
+    "id": "a9209ed0-c594-4cb6-a847-5c388a787aa7",
+    "merchantId": "merchant-test-1",
+    "customerId": "d0faaebb-3527-4f51-9c4a-6c71db54a539",
+    "customerName": "Whitefield Fabrics",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "checkout_abandoned",
+      "amountPaise": 44008700,
+      "currency": "INR",
+      "occurredAt": "2026-08-17T01:59:22.941Z"
+    },
+    "rootCause": "technical_gateway_failure",
+    "amountAtRiskPaise": 44008700,
+    "status": "diagnosing",
+    "tier": 4
+  },
+  {
+    "id": "c2ce09e1-b8ab-41e7-afa0-c40dfcf1140b",
+    "merchantId": "merchant-test-1",
+    "customerId": "ef47b6f1-e87e-4331-b345-cbea0da0b808",
+    "customerName": "Alkem Traders",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 29222100,
+      "currency": "INR",
+      "occurredAt": "2026-07-21T01:59:22.941Z"
+    },
+    "rootCause": "buyer_side_approval_delay",
+    "amountAtRiskPaise": 29222100,
+    "status": "detected",
+    "tier": 2
+  },
+  {
+    "id": "da0671ce-0f82-4472-b4a7-efc040434b08",
+    "merchantId": "merchant-test-1",
+    "customerId": "05a0da23-7996-4edb-a361-e48e625e9021",
+    "customerName": "Acme Corp",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "mandate_failed",
+      "amountPaise": 22310900,
+      "currency": "INR",
+      "occurredAt": "2026-08-02T01:59:22.941Z"
+    },
+    "rootCause": "issuer_risk_block",
+    "amountAtRiskPaise": 22310900,
+    "status": "stopped_unrecovered",
+    "tier": 3
+  },
+  {
+    "id": "fbab8b3d-fff9-441f-aec8-cf6445e688fc",
+    "merchantId": "merchant-test-1",
+    "customerId": "724c6e0f-77f5-4a09-b428-6e319c4c1414",
+    "customerName": "Alkem Traders",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 12153700,
+      "currency": "INR",
+      "occurredAt": "2026-08-14T01:59:22.941Z"
+    },
+    "rootCause": "insufficient_funds",
+    "amountAtRiskPaise": 12153700,
+    "status": "escalated",
+    "tier": 4
+  },
+  {
+    "id": "44121c87-22c8-4d56-ab53-1198005e2f8c",
+    "merchantId": "merchant-test-1",
+    "customerId": "b4039a34-daa4-4f4a-9c23-974ea948ab99",
+    "customerName": "Nimble Retail Co.",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "payment_failed",
+      "amountPaise": 32111000,
+      "currency": "INR",
+      "occurredAt": "2026-08-08T01:59:22.941Z"
+    },
+    "rootCause": "checkout_friction",
+    "amountAtRiskPaise": 32111000,
+    "status": "intervention_sent",
+    "tier": 3
+  },
+  {
+    "id": "d1da9879-eb43-41f4-850a-41b63e4dc4e2",
+    "merchantId": "merchant-test-1",
+    "customerId": "8b3db34b-4613-437a-a02d-58c0d3293d3e",
+    "customerName": "Meera Iyer",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 8518200,
+      "currency": "INR",
+      "occurredAt": "2026-07-22T01:59:22.941Z"
+    },
+    "rootCause": "voluntary_cancellation_signal",
+    "amountAtRiskPaise": 8518200,
+    "status": "recovered",
+    "tier": 4
+  },
+  {
+    "id": "3f3d2842-1e7e-4642-b144-f565ed9688cb",
+    "merchantId": "merchant-test-1",
+    "customerId": "16c31c2a-3c45-4424-a88a-ccd9ce5dc9bb",
+    "customerName": "Devika Nair",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "mandate_failed",
+      "amountPaise": 11413900,
+      "currency": "INR",
+      "occurredAt": "2026-07-25T01:59:22.941Z"
+    },
+    "rootCause": "undiagnosable",
+    "amountAtRiskPaise": 11413900,
+    "status": "diagnosing",
+    "tier": 3
+  },
+  {
+    "id": "dc4e86d2-1a91-457a-9a72-50751db3d82d",
+    "merchantId": "merchant-test-1",
+    "customerId": "9e8d780f-d108-49dc-9fee-618fded2edca",
+    "customerName": "Kestrel Apparel",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "checkout_abandoned",
+      "amountPaise": 21082900,
+      "currency": "INR",
+      "occurredAt": "2026-08-17T01:59:22.941Z"
+    },
+    "rootCause": "disputed_or_service_issue",
+    "amountAtRiskPaise": 21082900,
+    "status": "recovered",
+    "tier": 2
+  },
+  {
+    "id": "688779d7-e37b-48f3-8be7-84625ca3e612",
+    "merchantId": "merchant-test-1",
+    "customerId": "774a35b7-08e4-4844-ae24-51df9c83a650",
+    "customerName": "Alkem Traders",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 39421800,
+      "currency": "INR",
+      "occurredAt": "2026-08-17T01:59:22.941Z"
+    },
+    "rootCause": "technical_gateway_failure",
+    "amountAtRiskPaise": 39421800,
+    "status": "intervention_sent",
+    "tier": 4
+  },
+  {
+    "id": "ce7c8ad1-c36f-4987-9dbc-1d2fe9cd6154",
+    "merchantId": "merchant-test-1",
+    "customerId": "ec0dbe1e-82bd-47a7-924a-83f1cf23a667",
+    "customerName": "Meera Iyer",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 24321200,
+      "currency": "INR",
+      "occurredAt": "2026-07-17T01:59:22.942Z"
+    },
+    "rootCause": "issuer_risk_block",
+    "amountAtRiskPaise": 24321200,
+    "status": "intervention_sent",
+    "tier": 2
+  },
+  {
+    "id": "e31374b4-6401-471a-80b1-2118d2abe435",
+    "merchantId": "merchant-test-1",
+    "customerId": "cfc50284-0e96-458e-a698-7266346768f3",
+    "customerName": "Devika Nair",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "mandate_failed",
+      "amountPaise": 38971300,
+      "currency": "INR",
+      "occurredAt": "2026-08-05T01:59:22.942Z"
+    },
+    "rootCause": "voluntary_cancellation_signal",
+    "amountAtRiskPaise": 38971300,
+    "status": "stopped_unrecovered",
+    "tier": 4
+  },
+  {
+    "id": "106e78d9-018e-4161-ac1f-d5aeb4b8b24d",
+    "merchantId": "merchant-test-1",
+    "customerId": "55bac631-041f-4fa4-8f17-7db687feee52",
+    "customerName": "Kavya Menon",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "mandate_failed",
+      "amountPaise": 27471300,
+      "currency": "INR",
+      "occurredAt": "2026-07-28T01:59:22.942Z"
+    },
+    "rootCause": "voluntary_cancellation_signal",
+    "amountAtRiskPaise": 27471300,
+    "status": "recovered",
+    "tier": 3
+  },
+  {
+    "id": "7bee4f2a-2b58-427f-ad74-9cd5242f8e53",
+    "merchantId": "merchant-test-1",
+    "customerId": "ca24ace6-118d-404b-8e3c-3dae50643c0f",
+    "customerName": "Meera Iyer",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "payment_failed",
+      "amountPaise": 4288700,
+      "currency": "INR",
+      "occurredAt": "2026-08-21T01:59:22.942Z"
+    },
+    "rootCause": "buyer_side_approval_delay",
+    "amountAtRiskPaise": 4288700,
+    "status": "intervention_sent",
+    "tier": 4
+  },
+  {
+    "id": "713ad1da-f9f6-4c1c-a2b9-a76a3e1264ba",
+    "merchantId": "merchant-test-1",
+    "customerId": "050737ca-5b3d-4aa1-9e9b-6ebd06d6332e",
+    "customerName": "Acme Corp",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 17127900,
+      "currency": "INR",
+      "occurredAt": "2026-07-30T01:59:22.944Z"
+    },
+    "rootCause": "voluntary_cancellation_signal",
+    "amountAtRiskPaise": 17127900,
+    "status": "recovered",
+    "tier": 2
+  },
+  {
+    "id": "020fe55e-f1d2-4768-8c88-912023785566",
+    "merchantId": "merchant-test-1",
+    "customerId": "ce584cb0-4f9d-4473-a808-c87e869ae386",
+    "customerName": "Priya Suresh",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "payment_failed",
+      "amountPaise": 48077800,
+      "currency": "INR",
+      "occurredAt": "2026-07-28T01:59:22.944Z"
+    },
+    "rootCause": "undiagnosable",
+    "amountAtRiskPaise": 48077800,
+    "status": "escalated",
+    "tier": 3
+  },
+  {
+    "id": "cc86a519-b634-47ce-8ff4-42e58c4318cc",
+    "merchantId": "merchant-test-1",
+    "customerId": "e5ffafc2-099c-4e53-a5f1-b86369af4ea2",
+    "customerName": "Farhan Sheikh",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "mandate_failed",
+      "amountPaise": 41254400,
+      "currency": "INR",
+      "occurredAt": "2026-08-23T01:59:22.945Z"
+    },
+    "rootCause": "voluntary_cancellation_signal",
+    "amountAtRiskPaise": 41254400,
+    "status": "intervention_sent",
+    "tier": 3
+  },
+  {
+    "id": "4b0631b0-2822-4c77-a876-0ba014ea04cf",
+    "merchantId": "merchant-test-1",
+    "customerId": "d4a51269-17da-4956-8885-8207f5998f5e",
+    "customerName": "Farhan Sheikh",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "payment_failed",
+      "amountPaise": 14047300,
+      "currency": "INR",
+      "occurredAt": "2026-07-28T01:59:22.945Z"
+    },
+    "rootCause": "issuer_risk_block",
+    "amountAtRiskPaise": 14047300,
+    "status": "recovered",
+    "tier": 3
+  },
+  {
+    "id": "75109dd5-a1da-4711-9605-00142ba7e0e6",
+    "merchantId": "merchant-test-1",
+    "customerId": "21e2bd7f-4e54-4078-915b-132a7b2b47ba",
+    "customerName": "Farhan Sheikh",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 31946900,
+      "currency": "INR",
+      "occurredAt": "2026-07-15T01:59:22.945Z"
+    },
+    "rootCause": "buyer_side_approval_delay",
+    "amountAtRiskPaise": 31946900,
+    "status": "stopped_unrecovered",
+    "tier": 2
+  },
+  {
+    "id": "44621304-9452-4ec5-a4ed-a8d55b5f2ab1",
+    "merchantId": "merchant-test-1",
+    "customerId": "3689cde5-662b-4c84-beee-30f27536acb6",
+    "customerName": "Alkem Traders",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 1820300,
+      "currency": "INR",
+      "occurredAt": "2026-08-22T01:59:22.945Z"
+    },
+    "rootCause": "insufficient_funds",
+    "amountAtRiskPaise": 1820300,
+    "status": "detected",
+    "tier": 2
+  },
+  {
+    "id": "95b893d3-9950-4ac0-951d-06639ebcf055",
+    "merchantId": "merchant-test-1",
+    "customerId": "bb838609-e523-4107-a433-55026b5c9071",
+    "customerName": "Alkem Traders",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 27629500,
+      "currency": "INR",
+      "occurredAt": "2026-07-31T01:59:22.945Z"
+    },
+    "rootCause": "technical_gateway_failure",
+    "amountAtRiskPaise": 27629500,
+    "status": "intervention_sent",
+    "tier": 2
+  },
+  {
+    "id": "1d939e7a-8654-48d8-afc9-ecbd3d249f0e",
+    "merchantId": "merchant-test-1",
+    "customerId": "1ab6ea71-bef7-4d8b-9a61-9a901c9029d7",
+    "customerName": "Meera Iyer",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 18640300,
+      "currency": "INR",
+      "occurredAt": "2026-08-21T01:59:22.945Z"
+    },
+    "rootCause": "expired_or_invalid_instrument",
+    "amountAtRiskPaise": 18640300,
+    "status": "detected",
+    "tier": 3
+  },
+  {
+    "id": "8080e35c-b78d-4774-8bf2-4c98f96543c3",
+    "merchantId": "merchant-test-1",
+    "customerId": "39507bf8-1434-4683-9b12-867af6b91e17",
+    "customerName": "Meera Iyer",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "payment_failed",
+      "amountPaise": 49308200,
+      "currency": "INR",
+      "occurredAt": "2026-08-20T01:59:22.945Z"
+    },
+    "rootCause": "technical_gateway_failure",
+    "amountAtRiskPaise": 49308200,
+    "status": "recovered",
+    "tier": 2
+  },
+  {
+    "id": "8c937fad-1479-4600-a168-2e203182bf33",
+    "merchantId": "merchant-test-1",
+    "customerId": "db416f58-24df-4240-85d8-473111922adf",
+    "customerName": "Farhan Sheikh",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 30444300,
+      "currency": "INR",
+      "occurredAt": "2026-08-05T01:59:22.945Z"
+    },
+    "rootCause": "checkout_friction",
+    "amountAtRiskPaise": 30444300,
+    "status": "escalated",
+    "tier": 4
+  },
+  {
+    "id": "8bead4b8-77b2-4bf8-9bc0-ed3c086fdec0",
+    "merchantId": "merchant-test-1",
+    "customerId": "281d28b2-b02a-4a70-9fe0-2543127f53b0",
+    "customerName": "Alkem Traders",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "mandate_failed",
+      "amountPaise": 35440700,
+      "currency": "INR",
+      "occurredAt": "2026-07-22T01:59:22.945Z"
+    },
+    "rootCause": "issuer_risk_block",
+    "amountAtRiskPaise": 35440700,
+    "status": "detected",
+    "tier": 2
+  },
+  {
+    "id": "331aa558-126b-4362-8e5b-4e070be6f89d",
+    "merchantId": "merchant-test-1",
+    "customerId": "06334fd0-4e55-4541-9869-731755517121",
+    "customerName": "Devika Nair",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 31482500,
+      "currency": "INR",
+      "occurredAt": "2026-08-05T01:59:22.945Z"
+    },
+    "rootCause": "buyer_side_approval_delay",
+    "amountAtRiskPaise": 31482500,
+    "status": "intervention_sent",
+    "tier": 3
+  },
+  {
+    "id": "4afaa151-7a09-43c2-ba55-039a77fab482",
+    "merchantId": "merchant-test-1",
+    "customerId": "8f8a6cf5-fb45-46d9-932a-646626278c36",
+    "customerName": "Acme Corp",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "checkout_abandoned",
+      "amountPaise": 8656900,
+      "currency": "INR",
+      "occurredAt": "2026-08-26T01:59:22.945Z"
+    },
+    "rootCause": "voluntary_cancellation_signal",
+    "amountAtRiskPaise": 8656900,
+    "status": "stopped_unrecovered",
+    "tier": 1
+  },
+  {
+    "id": "eaa32941-31ae-44df-95fa-af215443caad",
+    "merchantId": "merchant-test-1",
+    "customerId": "ec620e71-cc03-4aad-b3f7-133ab35a8738",
+    "customerName": "Meera Iyer",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "checkout_abandoned",
+      "amountPaise": 9935700,
+      "currency": "INR",
+      "occurredAt": "2026-08-27T01:59:22.945Z"
+    },
+    "rootCause": "checkout_friction",
+    "amountAtRiskPaise": 9935700,
+    "status": "recovered",
+    "tier": 3
+  },
+  {
+    "id": "f19f456f-d8be-49a0-a2ba-3fd9cf85da23",
+    "merchantId": "merchant-test-1",
+    "customerId": "df3a93b1-e2df-48b7-aa7e-bb55d581dd4c",
+    "customerName": "Alkem Traders",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 8163000,
+      "currency": "INR",
+      "occurredAt": "2026-08-12T01:59:22.945Z"
+    },
+    "rootCause": "issuer_risk_block",
+    "amountAtRiskPaise": 8163000,
+    "status": "escalated",
+    "tier": 4
+  },
+  {
+    "id": "a2442c52-10f6-4311-add5-224ad616c2e5",
+    "merchantId": "merchant-test-1",
+    "customerId": "a92eb693-a9ec-4703-b24e-7022b345f566",
+    "customerName": "Kavya Menon",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 23999300,
+      "currency": "INR",
+      "occurredAt": "2026-08-19T01:59:22.945Z"
+    },
+    "rootCause": "buyer_side_approval_delay",
+    "amountAtRiskPaise": 23999300,
+    "status": "escalated",
+    "tier": 2
+  },
+  {
+    "id": "80929113-67fc-40f2-b130-147c91d67f0a",
+    "merchantId": "merchant-test-1",
+    "customerId": "bb3eb13b-9407-4470-ba27-fd3c9f16676e",
+    "customerName": "Whitefield Fabrics",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "payment_failed",
+      "amountPaise": 36618600,
+      "currency": "INR",
+      "occurredAt": "2026-07-26T01:59:22.945Z"
+    },
+    "rootCause": "expired_or_invalid_instrument",
+    "amountAtRiskPaise": 36618600,
+    "status": "recovered",
+    "tier": 2
+  },
+  {
+    "id": "5d3a9139-b95c-4a22-8bba-4345aa1eef0a",
+    "merchantId": "merchant-test-1",
+    "customerId": "770b4c71-7e59-4f39-a682-78d27a9617b3",
+    "customerName": "Acme Corp",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "checkout_abandoned",
+      "amountPaise": 19387500,
+      "currency": "INR",
+      "occurredAt": "2026-08-12T01:59:22.945Z"
+    },
+    "rootCause": "disputed_or_service_issue",
+    "amountAtRiskPaise": 19387500,
+    "status": "diagnosing",
+    "tier": 3
+  },
+  {
+    "id": "cf64e41d-1c10-429f-9eed-bd45a7b6c611",
+    "merchantId": "merchant-test-1",
+    "customerId": "eca3ba56-8544-4eb3-919f-a36883a41ff6",
+    "customerName": "Acme Corp",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "mandate_failed",
+      "amountPaise": 24872700,
+      "currency": "INR",
+      "occurredAt": "2026-08-26T01:59:22.945Z"
+    },
+    "rootCause": "undiagnosable",
+    "amountAtRiskPaise": 24872700,
+    "status": "detected",
+    "tier": 1
+  },
+  {
+    "id": "dacc9a0c-6a90-450d-9261-d21cb57e7574",
+    "merchantId": "merchant-test-1",
+    "customerId": "4b724f25-08d2-414c-bdb9-014504b69938",
+    "customerName": "Startup Inc",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 9168300,
+      "currency": "INR",
+      "occurredAt": "2026-07-26T01:59:22.945Z"
+    },
+    "rootCause": "voluntary_cancellation_signal",
+    "amountAtRiskPaise": 9168300,
+    "status": "stopped_unrecovered",
+    "tier": 1
+  },
+  {
+    "id": "1d76fb84-5d2f-4727-9835-bfb448ea7b95",
+    "merchantId": "merchant-test-1",
+    "customerId": "3386dfc5-ebe1-43b1-b7c6-5cf48a43d017",
+    "customerName": "Acme Corp",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 18581200,
+      "currency": "INR",
+      "occurredAt": "2026-07-25T01:59:22.945Z"
+    },
+    "rootCause": "buyer_side_approval_delay",
+    "amountAtRiskPaise": 18581200,
+    "status": "stopped_unrecovered",
+    "tier": 4
+  },
+  {
+    "id": "8b33d55e-36c1-4e56-a330-312c48ff01a9",
+    "merchantId": "merchant-test-1",
+    "customerId": "200c3d7e-605d-4c79-830e-4a0e62fac27b",
+    "customerName": "Nimble Retail Co.",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 41686400,
+      "currency": "INR",
+      "occurredAt": "2026-08-12T01:59:22.945Z"
+    },
+    "rootCause": "checkout_friction",
+    "amountAtRiskPaise": 41686400,
+    "status": "intervention_sent",
+    "tier": 3
+  },
+  {
+    "id": "fa77fa6e-1c9b-47fa-95b7-f8e9e5239c1c",
+    "merchantId": "merchant-test-1",
+    "customerId": "db16ddf4-a288-4d77-8c23-1b3f568290a3",
+    "customerName": "Startup Inc",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 44487000,
+      "currency": "INR",
+      "occurredAt": "2026-08-03T01:59:22.945Z"
+    },
+    "rootCause": "expired_or_invalid_instrument",
+    "amountAtRiskPaise": 44487000,
+    "status": "recovered",
+    "tier": 2
+  },
+  {
+    "id": "94a95631-cad2-4a3b-a0de-c8d963a8d5a0",
+    "merchantId": "merchant-test-1",
+    "customerId": "506fa50f-e2ad-4e2b-99a4-b99de632b96f",
+    "customerName": "Meera Iyer",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "mandate_failed",
+      "amountPaise": 21192500,
+      "currency": "INR",
+      "occurredAt": "2026-07-24T01:59:22.945Z"
+    },
+    "rootCause": "undiagnosable",
+    "amountAtRiskPaise": 21192500,
+    "status": "escalated",
+    "tier": 2
+  },
+  {
+    "id": "2bd475b6-fc8b-41dc-9641-9663fcc03490",
+    "merchantId": "merchant-test-1",
+    "customerId": "81d580f9-5863-436e-a8c2-29527759240e",
+    "customerName": "Devika Nair",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "checkout_abandoned",
+      "amountPaise": 8577900,
+      "currency": "INR",
+      "occurredAt": "2026-08-01T01:59:22.945Z"
+    },
+    "rootCause": "disputed_or_service_issue",
+    "amountAtRiskPaise": 8577900,
+    "status": "diagnosing",
+    "tier": 4
+  },
+  {
+    "id": "49d975f6-d3e5-44cc-bef0-9117f85bb98d",
+    "merchantId": "merchant-test-1",
+    "customerId": "caf4bbb0-2628-4c14-8a84-c7d69790055c",
+    "customerName": "Farhan Sheikh",
+    "riskEvent": {
+      "source": "synthetic_seed",
+      "eventType": "invoice_overdue",
+      "amountPaise": 41332300,
+      "currency": "INR",
+      "occurredAt": "2026-08-22T01:59:22.945Z"
+    },
+    "rootCause": "issuer_risk_block",
+    "amountAtRiskPaise": 41332300,
+    "status": "diagnosing",
+    "tier": 2
+  }
+]
