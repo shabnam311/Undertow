@@ -1,0 +1,269 @@
+{
+  "bundleSize": 28671,
+  "bundleOrigSize": 82919,
+  "bundleReduction": 65.42,
+  "modules": [
+    {
+      "id": "/src/shared/hooks/createHooksInternal.tsx",
+      "size": 15903,
+      "origSize": 17049,
+      "renderedExports": [
+        "createRootHooks"
+      ],
+      "removedExports": [],
+      "dependents": [
+        "/src/shared/hooks/deprecated/createHooksInternal.tsx"
+      ],
+      "percent": 55.47,
+      "reduction": 6.72
+    },
+    {
+      "id": "/src/ssg/ssg.ts",
+      "size": 3161,
+      "origSize": 4194,
+      "renderedExports": [
+        "createSSGHelpers"
+      ],
+      "removedExports": [],
+      "dependents": [
+        "/src/server/ssgProxy.ts"
+      ],
+      "percent": 11.03,
+      "reduction": 24.63
+    },
+    {
+      "id": "/src/shared/proxy/utilsProxy.ts",
+      "size": 2575,
+      "origSize": 9434,
+      "renderedExports": [
+        "createReactQueryUtilsProxy"
+      ],
+      "removedExports": [],
+      "dependents": [
+        "/src/shared/index.ts"
+      ],
+      "percent": 8.98,
+      "reduction": 72.71
+    },
+    {
+      "id": "/src/shared/proxy/decorationProxy.ts",
+      "size": 1535,
+      "origSize": 1752,
+      "renderedExports": [
+        "createReactProxyDecoration"
+      ],
+      "removedExports": [],
+      "dependents": [
+        "/src/shared/index.ts"
+      ],
+      "percent": 5.35,
+      "reduction": 12.39
+    },
+    {
+      "id": "/src/internals/getArrayQueryKey.ts",
+      "size": 1272,
+      "origSize": 1650,
+      "renderedExports": [
+        "getArrayQueryKey"
+      ],
+      "removedExports": [],
+      "dependents": [
+        "/src/ssg/ssg.ts",
+        "/src/internals/getQueryKey.ts",
+        "/src/shared/proxy/decorationProxy.ts",
+        "/src/shared/hooks/createHooksInternal.tsx",
+        "/src/shared/hooks/deprecated/createHooksInternal.tsx"
+      ],
+      "percent": 4.44,
+      "reduction": 22.91
+    },
+    {
+      "id": "/src/server/ssgProxy.ts",
+      "size": 904,
+      "origSize": 2911,
+      "renderedExports": [
+        "createServerSideHelpers"
+      ],
+      "removedExports": [],
+      "dependents": [
+        "/src/server/index.ts"
+      ],
+      "percent": 3.15,
+      "reduction": 68.95
+    },
+    {
+      "id": "/src/internals/getQueryKey.ts",
+      "size": 893,
+      "origSize": 2964,
+      "renderedExports": [
+        "getQueryKeyInternal",
+        "getQueryKey"
+      ],
+      "removedExports": [],
+      "dependents": [
+        "/src/index.ts",
+        "/src/shared/proxy/decorationProxy.ts",
+        "/src/shared/proxy/utilsProxy.ts",
+        "/src/shared/proxy/useQueriesProxy.ts"
+      ],
+      "percent": 3.11,
+      "reduction": 69.87
+    },
+    {
+      "id": "/src/createTRPCReact.tsx",
+      "size": 857,
+      "origSize": 8978,
+      "renderedExports": [
+        "createHooksInternalProxy",
+        "createTRPCReact"
+      ],
+      "removedExports": [],
+      "dependents": [
+        "/src/interop.ts",
+        "/src/index.ts"
+      ],
+      "percent": 2.99,
+      "reduction": 90.45
+    },
+    {
+      "id": "/src/shared/proxy/useQueriesProxy.ts",
+      "size": 513,
+      "origSize": 2334,
+      "renderedExports": [
+        "createUseQueriesProxy"
+      ],
+      "removedExports": [],
+      "dependents": [
+        "/src/shared/index.ts",
+        "/src/shared/hooks/createHooksInternal.tsx",
+        "/src/shared/hooks/deprecated/createHooksInternal.tsx"
+      ],
+      "percent": 1.79,
+      "reduction": 78.02
+    },
+    {
+      "id": "/src/interop.ts",
+      "size": 270,
+      "origSize": 887,
+      "renderedExports": [
+        "createReactQueryHooks"
+      ],
+      "removedExports": [],
+      "dependents": [
+        "/src/index.ts"
+      ],
+      "percent": 0.94,
+      "reduction": 69.56
+    },
+    {
+      "id": "/src/internals/useHookResult.ts",
+      "size": 201,
+      "origSize": 323,
+      "renderedExports": [
+        "useHookResult"
+      ],
+      "removedExports": [],
+      "dependents": [
+        "/src/shared/hooks/createHooksInternal.tsx",
+        "/src/shared/hooks/deprecated/createHooksInternal.tsx"
+      ],
+      "percent": 0.7,
+      "reduction": 37.77
+    },
+    {
+      "id": "/src/internals/context.tsx",
+      "size": 155,
+      "origSize": 9446,
+      "renderedExports": [
+        "contextProps",
+        "TRPCContext"
+      ],
+      "removedExports": [],
+      "dependents": [
+        "/src/shared/index.ts",
+        "/src/shared/index.ts",
+        "/src/shared/proxy/utilsProxy.ts",
+        "/src/shared/hooks/createHooksInternal.tsx",
+        "/src/shared/hooks/deprecated/createHooksInternal.tsx"
+      ],
+      "percent": 0.54,
+      "reduction": 98.36
+    },
+    {
+      "id": "/src/internals/getClientArgs.ts",
+      "size": 154,
+      "origSize": 221,
+      "renderedExports": [
+        "getClientArgs"
+      ],
+      "removedExports": [],
+      "dependents": [
+        "/src/shared/index.ts",
+        "/src/shared/hooks/createHooksInternal.tsx",
+        "/src/shared/hooks/deprecated/createHooksInternal.tsx"
+      ],
+      "percent": 0.54,
+      "reduction": 30.32
+    },
+    {
+      "id": "/src/shared/hooks/deprecated/createHooksInternal.tsx",
+      "size": 149,
+      "origSize": 18975,
+      "renderedExports": [
+        "createHooksInternal"
+      ],
+      "removedExports": [],
+      "dependents": [],
+      "percent": 0.52,
+      "reduction": 99.21
+    },
+    {
+      "id": "/src/shared/queryClient.ts",
+      "size": 129,
+      "origSize": 514,
+      "renderedExports": [
+        "getQueryClient"
+      ],
+      "removedExports": [],
+      "dependents": [
+        "/src/shared/index.ts"
+      ],
+      "percent": 0.45,
+      "reduction": 74.9
+    },
+    {
+      "id": "/src/index.ts",
+      "size": 0,
+      "origSize": 301,
+      "renderedExports": [],
+      "removedExports": [],
+      "dependents": [],
+      "percent": 0,
+      "reduction": 100
+    },
+    {
+      "id": "/src/server/index.ts",
+      "size": 0,
+      "origSize": 305,
+      "renderedExports": [],
+      "removedExports": [],
+      "dependents": [],
+      "percent": 0,
+      "reduction": 100
+    },
+    {
+      "id": "/src/shared/index.ts",
+      "size": 0,
+      "origSize": 681,
+      "renderedExports": [],
+      "removedExports": [],
+      "dependents": [
+        "/src/createTRPCReact.tsx",
+        "/src/ssg/ssg.ts"
+      ],
+      "percent": 0,
+      "reduction": 100
+    }
+  ],
+  "moduleCount": 18
+}
