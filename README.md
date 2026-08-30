@@ -34,10 +34,8 @@ To run Undertow locally, ensure you have [Bun](https://bun.sh) installed.
 
 4. Run the Dev Server:
    ```bash
-   # From the root, start the frontend and backend (Need to add turbo or concurrently)
-   # For now, run in two terminals:
-   cd apps/api && bun run dev
-   cd apps/web && bun run dev
+   # Starts both the Hono API and Vite Frontend concurrently
+   bun run dev
    ```
 
 ## Current Status: What is real vs stubbed?
