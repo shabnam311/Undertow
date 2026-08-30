@@ -21,9 +21,21 @@ function sparkPath(vals: number[], w: number, h: number) {
 }
 
 function QueueView() {
-  const [selectedCaseId, setSelectedCaseId] = useState(1);
+  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  
   const casesQuery = trpc.cases.list.useQuery();
+  
+  useEffect(() => {
+    if (!selectedCaseId && casesQuery.data && casesQuery.data.length > 0) {
+      setSelectedCaseId(casesQuery.data[0].id);
+    }
+  }, [casesQuery.data, selectedCaseId]);
+
+  const caseDetailQuery = trpc.cases.get.useQuery(
+    { id: selectedCaseId! },
+    { enabled: !!selectedCaseId }
+  );
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -144,25 +156,26 @@ function QueueView() {
             </thead>
             <tbody id="queue-body">
               {casesQuery.data?.map(c => {
-                const path = sparkPath(c.trend, 64, 20);
+                const path = sparkPath([2,2,3,4,4,5,6], 64, 20); // Static trend for now
                 const sparkColor = c.status === 'recovered' ? '#C89B3C' : (c.status === 'escalated' ? '#B5563A' : '#3C7A6E');
                 const isSelected = selectedCaseId === c.id;
+                const tier = 1; // Tier is now derived from interventions, placeholder here
                 
                 return (
                   <tr key={c.id} className={isSelected ? 'selected' : ''} onClick={() => setSelectedCaseId(c.id)}>
                     <td>
-                      <div className="cust">{c.name}</div>
-                      <div className="cust-sub">{c.sub}</div>
+                      <div className="cust">{c.customerName}</div>
+                      <div className="cust-sub">{c.eventType}</div>
                     </td>
-                    <td style={{ color: 'var(--text-2)' }}>{c.cause}</td>
+                    <td style={{ color: 'var(--text-2)' }}>{c.rootCause || 'Unknown'}</td>
                     <td>
                       <div className="tier-dots">
                         {[0,1,2,3].map(i => (
-                          <span key={i} className={i < c.tier ? 'on' : ''}></span>
+                          <span key={i} className={i < tier ? 'on' : ''}></span>
                         ))}
                       </div>
                     </td>
-                    <td className="amt">{c.amt}</td>
+                    <td className="amt">₹{(c.amountAtRiskPaise / 100).toLocaleString()}</td>
                     <td>
                       <svg className="spark" viewBox="0 0 64 20">
                         <path d={path} fill="none" stroke={sparkColor} strokeWidth="1.4" />
@@ -179,51 +192,63 @@ function QueueView() {
         </div>
 
         <div className="panel">
-          <div className="case-head">
-            <div className="name serif">Kavya Menon</div>
-            <div className="meta mono">CASE-08841 · opened 2 days ago</div>
-          </div>
-          <div className="case-amounts">
-            <div>
-              <div className="label">At risk</div>
-              <div className="val" style={{ color: 'var(--rust)' }}>₹18,400</div>
-            </div>
-            <div>
-              <div className="label">Root cause</div>
-              <div className="val" style={{ fontFamily: '"Public Sans", sans-serif', fontSize: '13px', color: 'var(--text-1)' }}>Issuer risk block</div>
-            </div>
-          </div>
-          <div className="timeline">
-            <div className="tl-item done">
-              <div className="tl-node">Detect</div>
-              <div className="tl-text">Card declined after four consecutive clean payments — flagged as degradation, not a first-time failure.</div>
-              <div className="tl-time">Tue, 09:14</div>
-            </div>
-            <div className="tl-item done">
-              <div className="tl-node">Diagnose</div>
-              <div className="tl-text">Decline code matched issuer-side risk hold. Retrying the same instrument will not help; routed to alternate-method flow.</div>
-              <div className="tl-time">Tue, 09:14</div>
-            </div>
-            <div className="tl-item done">
-              <div className="tl-node">Act — Tier 1</div>
-              <div className="tl-text">Email sent with an alternate-payment-method link. Consent confirmed for email channel before send.</div>
-              <div className="tl-time">Tue, 09:15</div>
-            </div>
-            <div className="tl-item done">
-              <div className="tl-node">Escalate — Tier 2</div>
-              <div className="tl-text">No response after 48 hour cooldown. Stepped to WhatsApp, approved template, Hindi-English mix per customer preference.</div>
-              <div className="tl-time">Thu, 09:20</div>
-            </div>
-            <div className="tl-item">
-              <div className="tl-node">Verify</div>
-              <div className="tl-text">Watching for a payment-success signal. Escalation ceiling for this merchant is Tier 3 — voice will not be attempted.</div>
-              <div className="tl-time">pending</div>
-            </div>
-          </div>
-          <div className="case-actions">
-            <button className="btn">Pause case</button>
-            <button className="btn primary">Approve next tier</button>
-          </div>
+          {caseDetailQuery.isLoading ? (
+            <div style={{ padding: '24px' }}>Loading...</div>
+          ) : caseDetailQuery.data ? (
+            <>
+              <div className="case-head">
+                <div className="name serif">{caseDetailQuery.data.customerName}</div>
+                <div className="meta mono">
+                  {caseDetailQuery.data.id.substring(0,8)} · opened {new Date(caseDetailQuery.data.openedAt).toLocaleDateString()}
+                </div>
+              </div>
+              <div className="case-amounts">
+                <div>
+                  <div className="label">At risk</div>
+                  <div className="val" style={{ color: 'var(--rust)' }}>
+                    ₹{(caseDetailQuery.data.amountAtRiskPaise / 100).toLocaleString()}
+                  </div>
+                </div>
+                <div>
+                  <div className="label">Root cause</div>
+                  <div className="val" style={{ fontFamily: '"Public Sans", sans-serif', fontSize: '13px', color: 'var(--text-1)' }}>
+                    {caseDetailQuery.data.rootCause || 'Unknown'}
+                  </div>
+                </div>
+              </div>
+              <div className="timeline">
+                {caseDetailQuery.data.agentRuns?.map(run => (
+                  <div key={run.id} className="tl-item done">
+                    <div className="tl-node">{run.nodeName}</div>
+                    <div className="tl-text">{run.reasoningSummary}</div>
+                    <div className="tl-time">
+                      {new Date(run.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                ))}
+                {caseDetailQuery.data.interventions?.map(inv => (
+                  <div key={inv.id} className="tl-item done">
+                    <div className="tl-node">Act — Tier {inv.tier}</div>
+                    <div className="tl-text">Intervention via {inv.channel} (Status: {inv.status})</div>
+                    <div className="tl-time">
+                      {new Date(inv.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                ))}
+                <div className="tl-item">
+                  <div className="tl-node">Current Status</div>
+                  <div className="tl-text">{caseDetailQuery.data.status}</div>
+                  <div className="tl-time">pending</div>
+                </div>
+              </div>
+              <div className="case-actions">
+                <button className="btn">Pause case</button>
+                <button className="btn primary">Approve next tier</button>
+              </div>
+            </>
+          ) : (
+            <div style={{ padding: '24px' }}>Select a case to view details</div>
+          )}
         </div>
       </div>
 

@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "concurrently \"bun --cwd apps/api dev\" \"bun --cwd apps/web dev\"",
     "build": "bun --cwd apps/api build && bun --cwd apps/web build",
-    "test": "echo \"No tests specified yet\" && exit 0"
+    "test": "bun test"
   },
   "devDependencies": {
     "concurrently": "^10.0.5"
