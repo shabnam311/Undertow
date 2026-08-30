@@ -43,6 +43,7 @@ export const riskEvents = pgTable('risk_events', {
   merchantId: uuid('merchant_id').references(() => merchants.id).notNull(),
   customerId: uuid('customer_id').references(() => customers.id).notNull(),
   source: text('source').notNull(), // 'razorpay_webhook' | 'synthetic_seed' | 'manual_upload'
+  externalEventId: text('external_event_id').unique(),
   eventType: text('event_type').notNull(), // 'payment_failed' | 'checkout_abandoned' | 'mandate_failed' | 'invoice_overdue'
   rawPayload: jsonb('raw_payload').notNull(),
   amountPaise: integer('amount_paise').notNull(),

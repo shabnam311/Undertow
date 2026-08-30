@@ -70,7 +70,7 @@ const diagnoseNode = async (state: AgentState) => {
 };
 
 // 3. Decide Node (Policy Table)
-const decideNode = (state: AgentState) => {
+export const decideNode = (state: AgentState) => {
   // Map diagnosis to intervention
   let channel = 'email';
   let tier = 1;
