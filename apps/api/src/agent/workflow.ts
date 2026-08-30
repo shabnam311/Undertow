@@ -30,8 +30,9 @@ const diagnoseNode = async (state: AgentState) => {
 
   // LLM fallback for ambiguous cases
   const llm = new ChatAnthropic({ 
-    modelName: 'claude-3-haiku-20240307', 
-    temperature: 0 
+    modelName: 'claude-haiku-4-5-20251001', 
+    temperature: 0,
+    maxTokens: 512
   });
 
   const diagnosisSchema = z.object({

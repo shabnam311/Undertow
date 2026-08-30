@@ -3,6 +3,7 @@ import { Inngest } from 'inngest';
 type Events = {
   'case/detected': {
     data: {
+      caseId: string;
       source: string;
       eventType: string;
       amountPaise: number;

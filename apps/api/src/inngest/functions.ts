@@ -1,5 +1,6 @@
 import { inngest } from './client';
 import { compiledWorkflow } from '../agent/workflow';
+import { db, agentRuns } from '@undertow/db';
 
 export const processRiskEvent = inngest.createFunction(
   { id: 'process-risk-event' },
@@ -19,13 +20,33 @@ export const processRiskEvent = inngest.createFunction(
     const diagnosis = await step.run('diagnose-root-cause', async () => {
       // Call LangGraph workflow here
       const state = await compiledWorkflow.invoke({ event: event.data });
+      
+      // Audit trail
+      await db.insert(agentRuns).values({
+        caseId: event.data.caseId,
+        nodeName: 'diagnose',
+        reasoningSummary: `LLM identified root cause: ${state.diagnosis?.rootCause} with ${state.diagnosis?.confidence}% confidence`,
+        metadata: { diagnosis: state.diagnosis }
+      });
+
       return { rootCause: state.diagnosis?.rootCause, confidence: state.diagnosis?.confidence };
     });
 
     // 3. Decide node (policy table)
     const decision = await step.run('decide-intervention', async () => {
-      // Table lookup
-      return { channel: 'email', tier: 1 };
+      // In a real app, this queries the DB for the active policy mapping
+      const state = await compiledWorkflow.invoke({ event: event.data, diagnosis });
+      const finalDecision = state.decision || { channel: 'email', tier: 1 };
+      
+      // Audit trail
+      await db.insert(agentRuns).values({
+        caseId: event.data.caseId,
+        nodeName: 'decide',
+        reasoningSummary: `Policy mapped ${diagnosis.rootCause} to channel: ${finalDecision.channel} at tier ${finalDecision.tier}`,
+        metadata: { decision: finalDecision }
+      });
+
+      return finalDecision;
     });
 
     // 4. Act node (emit intent)
