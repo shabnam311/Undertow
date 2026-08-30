@@ -31,25 +31,72 @@ export const requireAnalyst = protectedProcedure.use(async ({ ctx, next }) => {
 
 export const appRouter = t.router({
   cases: t.router({
-    list: protectedProcedure.query(async ({ ctx }) => {
-      const caseList = await db
-        .select({
-          id: cases.id,
-          status: cases.status,
-          rootCause: cases.rootCause,
-          amountAtRiskPaise: cases.amountAtRiskPaise,
-          customerName: customers.name,
-          eventType: riskEvents.eventType,
-          openedAt: cases.openedAt,
-        })
-        .from(cases)
-        .leftJoin(customers, eq(cases.customerId, customers.id))
-        .leftJoin(riskEvents, eq(cases.riskEventId, riskEvents.id))
-        .where(eq(cases.merchantId, ctx.user.merchantId))
-        .orderBy(desc(cases.openedAt))
-        .limit(100);
+    kpis: protectedProcedure.query(async ({ ctx }) => {
+      const allCases = await db.query.cases.findMany({
+        where: eq(cases.merchantId, ctx.user.merchantId),
+        with: { interventions: true }
+      });
 
-      return caseList;
+      let recoveredAmount = 0;
+      let atRiskAmount = 0;
+      let openCasesCount = 0;
+      let stoppedCount = 0;
+      let totalCost = 0;
+
+      for (const c of allCases) {
+        if (c.status === 'recovered') {
+          recoveredAmount += (c.amountRecoveredPaise || c.amountAtRiskPaise);
+        } else if (c.status === 'stopped_unrecovered') {
+          stoppedCount += 1;
+        } else {
+          atRiskAmount += c.amountAtRiskPaise;
+          openCasesCount += 1;
+        }
+
+        for (const inv of c.interventions) {
+          totalCost += (inv.costPaise || 0);
+        }
+      }
+
+      const costPerRecoveredRupee = recoveredAmount > 0 
+        ? (totalCost / 100) / (recoveredAmount / 100) 
+        : 0;
+
+      return {
+        recoveredAmountPaise: recoveredAmount,
+        atRiskAmountPaise: atRiskAmount,
+        openCasesCount,
+        stoppedCount,
+        costPerRecoveredRupee,
+      };
+    }),
+
+    list: protectedProcedure.query(async ({ ctx }) => {
+      // Get cases with interventions to compute current tier
+      const caseList = await db.query.cases.findMany({
+        where: eq(cases.merchantId, ctx.user.merchantId),
+        with: {
+          customer: true,
+          riskEvent: true,
+          interventions: true,
+        },
+        orderBy: (cases, { desc }) => [desc(cases.openedAt)],
+        limit: 100,
+      });
+
+      return caseList.map(c => {
+        const currentTier = c.interventions.reduce((max, inv) => Math.max(max, inv.tier), 0);
+        return {
+          id: c.id,
+          status: c.status,
+          rootCause: c.rootCause,
+          amountAtRiskPaise: c.amountAtRiskPaise,
+          customerName: c.customer?.name || 'Unknown',
+          eventType: c.riskEvent?.eventType,
+          openedAt: c.openedAt,
+          currentTier,
+        };
+      });
     }),
     
     get: protectedProcedure

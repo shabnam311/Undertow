@@ -37,6 +37,8 @@ function QueueView() {
     { enabled: !!selectedCaseId }
   );
 
+  const kpisQuery = trpc.cases.kpis.useQuery();
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -104,23 +106,23 @@ function QueueView() {
       <div className="kpi-row">
         <div className="kpi">
           <div className="label">Recovered, this cycle</div>
-          <div className="value brass mono">₹18,42,600</div>
-          <div className="delta up">62% of amount at risk</div>
+          <div className="value brass mono">₹{((kpisQuery.data?.recoveredAmountPaise || 0) / 100).toLocaleString()}</div>
+          <div className="delta up">Live database value</div>
         </div>
         <div className="kpi">
           <div className="label">At risk, open</div>
-          <div className="value rust mono">₹9,05,200</div>
-          <div className="delta">42 cases across 4 tiers</div>
+          <div className="value rust mono">₹{((kpisQuery.data?.atRiskAmountPaise || 0) / 100).toLocaleString()}</div>
+          <div className="delta">{kpisQuery.data?.openCasesCount || 0} cases active</div>
         </div>
         <div className="kpi">
           <div className="label">Cost per recovered ₹</div>
-          <div className="value mono">₹0.014</div>
+          <div className="value mono">₹{(kpisQuery.data?.costPerRecoveredRupee || 0).toFixed(3)}</div>
           <div className="delta">messaging + inference, blended</div>
         </div>
         <div className="kpi">
           <div className="label">Stopped, unrecovered</div>
-          <div className="value mono">11</div>
-          <div className="delta">6 disputed · 5 exhausted</div>
+          <div className="value mono">{kpisQuery.data?.stoppedCount || 0}</div>
+          <div className="delta">Disputed or exhausted</div>
         </div>
       </div>
 
@@ -159,7 +161,6 @@ function QueueView() {
                 const path = sparkPath([2,2,3,4,4,5,6], 64, 20); // Static trend for now
                 const sparkColor = c.status === 'recovered' ? '#C89B3C' : (c.status === 'escalated' ? '#B5563A' : '#3C7A6E');
                 const isSelected = selectedCaseId === c.id;
-                const tier = 1; // Tier is now derived from interventions, placeholder here
                 
                 return (
                   <tr key={c.id} className={isSelected ? 'selected' : ''} onClick={() => setSelectedCaseId(c.id)}>
@@ -171,7 +172,7 @@ function QueueView() {
                     <td>
                       <div className="tier-dots">
                         {[0,1,2,3].map(i => (
-                          <span key={i} className={i < tier ? 'on' : ''}></span>
+                          <span key={i} className={i < c.currentTier ? 'on' : ''}></span>
                         ))}
                       </div>
                     </td>
