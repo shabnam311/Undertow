@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "src/index.ts",
   "scripts": {
-    "dev": "bun run --hot src/index.ts"
+    "dev": "bun run --hot src/index.ts",
+    "build": "bun build src/index.ts --target=bun --outdir=dist"
   },
   "dependencies": {
     "@hono/trpc-server": "^0.4.2",
@@ -12,6 +13,7 @@
     "@langchain/langgraph": "^1.4.13",
     "@trpc/server": "^10.45.2",
     "@undertow/db": "workspace:*",
+    "drizzle-orm": "^0.45.2",
     "hono": "^4.5.0",
     "inngest": "^3.22.0",
     "zod": "^3.23.8"
