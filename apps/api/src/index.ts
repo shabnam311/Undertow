@@ -9,17 +9,26 @@ import { cors } from 'hono/cors';
 
 const app = new Hono();
 
-app.use('*', cors());
-
 app.get('/', (c) => {
   return c.text('Undertow API is running!');
 });
 
-// Attach tRPC
+// Attach tRPC with CORS and Context
 app.use(
   '/trpc/*',
+  cors(),
   trpcServer({
     router: appRouter,
+    createContext: (opts) => {
+      // Stubbed authentication - in real life read from Headers/JWT
+      return {
+        user: {
+          id: 'user-1',
+          role: 'owner' as const,
+          merchantId: 'merchant-test-1',
+        },
+      };
+    },
   })
 );
 

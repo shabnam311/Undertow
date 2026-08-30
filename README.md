@@ -7,7 +7,7 @@ Undertow is a bounded, auditable agent that watches a merchant's payment and bil
 - **Frontend**: TanStack Router + React (Vite SPA) + Tailwind v4
 - **Backend API**: Hono running on Bun, exposing tRPC routes and Razorpay Webhooks.
 - **Durable Orchestration**: Inngest for stateful event execution (Detect, Diagnose, Decide, Act, Escalate)
-- **Agent Reasoning**: LangGraph `StateGraph` + Claude 3.5 Haiku (Anthropic API) for diagnosis of unstructured failure events.
+- **Agent Reasoning**: LangGraph `StateGraph` + Haiku 4.5 (`claude-haiku-4-5-20251001`) for diagnosis of unstructured failure events.
 - **Database**: Neon Serverless Postgres via Drizzle ORM
 
 ## Local Setup
@@ -43,13 +43,11 @@ To run Undertow locally, ensure you have [Bun](https://bun.sh) installed.
 ## Current Status: What is real vs stubbed?
 
 This prototype implements the full structural skeleton of the system:
-- **Real**: Database schemas, Webhook signature verification, Inngest orchestration loops, LangGraph StateGraph flow, tRPC transport layer, React UI components, Synthetic Evaluation Data Generator.
+- **Real (Verified)**: Database schemas, Webhook signature verification & idempotency, Inngest orchestration loops with agentRuns audit trails, LangGraph StateGraph flow, tRPC transport layer, React UI components, Synthetic Evaluation Data Generator.
 - **Stubbed**: 
   - `apps/web` is currently a single-page Vite app rather than a full TanStack Start SSR Nitro build.
-  - Authentication (WorkOS) is completely stubbed out. The tRPC layer has no session context and no role-based access control.
-  - The `decideNode` policy logic is fully modeled in LangGraph, but currently returns a static fallback decision.
-  - The final `executeIntervention` channel delivery (e.g. Resend, MSG91) is empty and does not actually send SMS/Emails yet.
-  - `evaluateEscalation` cron job is defined but empty.
+  - Authentication (WorkOS) is completely stubbed out. The tRPC layer has basic role checks but no real session context.
+  - The final `executeIntervention` channel delivery (e.g. Resend, MSG91) doesn't actually hit the network, but successfully writes to the database.
 
 ## Evaluation Batch
 

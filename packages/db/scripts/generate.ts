@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
-import { db, riskEvents, cases, customers, stopEvents } from '../client'; // Now we actually seed the DB!
+import { db, riskEvents, cases, customers, stopEvents, evaluationBatches } from '../client'; // Now we actually seed the DB!
 
 const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 const sample = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
@@ -22,6 +22,11 @@ const CUSTOMERS = [
 export async function runSeed() {
   console.log("Generating and seeding synthetic batch...");
   
+  const [evalBatch] = await db.insert(evaluationBatches).values({
+    name: `Synthetic Batch ${Date.now()}`,
+    description: 'Auto-generated synthetic dataset for precision/recall testing',
+  }).returning();
+
   const casesData = [];
   
   for (let i = 0; i < 60; i++) {
@@ -79,6 +84,7 @@ export async function runSeed() {
         merchantId,
         customerId,
         riskEventId: riskEvent.id,
+        evaluationBatchId: evalBatch.id,
         amountAtRiskPaise: amountPaise,
         status: status as any,
         rootCause: rootCause as any,
@@ -88,8 +94,8 @@ export async function runSeed() {
       if (status === 'stopped_unrecovered') {
         await tx.insert(stopEvents).values({
           caseId: newCase.id,
-          reason: 'disputed_or_service_issue',
-          triggeredBy: 'system',
+          reasonCode: 'disputed', // Note: schema says reasonCode, my old code said reason
+          isSystemTriggered: true,
         });
       }
 

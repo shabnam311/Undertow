@@ -71,19 +71,41 @@ const diagnoseNode = async (state: AgentState) => {
 
 // 3. Decide Node (Policy Table)
 export const decideNode = (state: AgentState) => {
-  // Map diagnosis to intervention
+  const rootCause = state.diagnosis?.rootCause;
+  
+  // Default mapping
   let channel = 'email';
   let tier = 1;
 
-  if (state.diagnosis?.rootCause === 'insufficient_funds') {
-    channel = 'payment_link_retry';
-    tier = 1;
+  switch (rootCause) {
+    case 'insufficient_funds':
+    case 'expired_or_invalid_instrument':
+      channel = 'payment_link_retry';
+      tier = 1;
+      break;
+    case 'issuer_risk_block':
+    case 'technical_gateway_failure':
+      channel = 'email'; // Low touch for technical issues
+      tier = 1;
+      break;
+    case 'checkout_friction':
+    case 'buyer_side_approval_delay':
+      channel = 'whatsapp'; // High engagement needed
+      tier = 2;
+      break;
+    case 'disputed_or_service_issue':
+    case 'voluntary_cancellation_signal':
+      channel = 'none'; // Stop intervention
+      tier = 0;
+      break;
+    case 'undiagnosable':
+    default:
+      channel = 'email';
+      tier = 1;
+      break;
   }
 
-  return {
-    ...state,
-    decision: { channel, tier }
-  };
+  return { ...state, decision: { channel, tier } };
 };
 
 // Define the graph

@@ -7,10 +7,15 @@ import {
   boolean,
   uuid,
   varchar,
+  pgEnum
 } from 'drizzle-orm/pg-core';
 
+// Enums
+export const roleEnum = pgEnum('role', ['owner', 'analyst', 'viewer']);
+
+// --- Users & Merchants ---
 export const merchants = pgTable('merchants', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
   razorpayAccountId: text('razorpay_account_id').notNull(),
   spendCeilingPaise: integer('spend_ceiling_paise').notNull(),
@@ -19,10 +24,11 @@ export const merchants = pgTable('merchants', {
 });
 
 export const merchantUsers = pgTable('merchant_users', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').primaryKey().defaultRandom(),
   merchantId: uuid('merchant_id').references(() => merchants.id).notNull(),
   workosUserId: text('workos_user_id').notNull(),
-  role: text('role').notNull(), // 'owner' | 'analyst' | 'viewer'
+  email: text('email').notNull().unique(),
+  role: roleEnum('role').notNull().default('viewer'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -97,8 +103,9 @@ export const agentRuns = pgTable('agent_runs', {
 export const stopEvents = pgTable('stop_events', {
   id: uuid('id').defaultRandom().primaryKey(),
   caseId: uuid('case_id').references(() => cases.id).notNull(),
-  reasonCode: text('reason_code').notNull(), // 'recovered' | 'escalation_ceiling_reached' | 'spend_ceiling_reached' | 'customer_opted_out' | 'disputed' | 'manual_override' | 'max_attempts_reached'
-  triggeredBy: text('triggered_by').notNull(), // 'system' or merchant_user_id
+  reasonCode: text('reason_code').notNull(),
+  isSystemTriggered: boolean('is_system_triggered').notNull().default(true),
+  merchantUserId: uuid('merchant_user_id').references(() => merchantUsers.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

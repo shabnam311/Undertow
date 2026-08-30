@@ -1,1 +1,13 @@
-{ "name": "undertow", "private": true, "workspaces": ["apps/*", "packages/*"] }
+{
+  "name": "undertow",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "concurrently \"bun --cwd apps/api dev\" \"bun --cwd apps/web dev\"",
+    "build": "bun --cwd apps/api build && bun --cwd apps/web build",
+    "test": "echo \"No tests specified yet\" && exit 0"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}
