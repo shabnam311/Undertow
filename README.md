@@ -7,7 +7,7 @@ Undertow is a bounded, auditable agent that watches a merchant's payment and bil
 - **Frontend**: TanStack Router + React (Vite SPA) + Tailwind v4
 - **Backend API**: Hono running on Bun, exposing tRPC routes and Razorpay Webhooks.
 - **Durable Orchestration**: Inngest for stateful event execution (Detect, Diagnose, Decide, Act, Escalate)
-- **Agent Reasoning**: LangGraph `StateGraph` + Haiku 4.5 (`claude-haiku-4-5-20251001`) for diagnosis of unstructured failure events.
+- **Agent Reasoning**: LangGraph `StateGraph` + Claude 3.5 Haiku (`claude-3-5-haiku-20241022`) for diagnosis of unstructured failure events.
 - **Database**: Neon Serverless Postgres via Drizzle ORM
 
 ## Local Setup
@@ -41,7 +41,7 @@ To run Undertow locally, ensure you have [Bun](https://bun.sh) installed.
 ## Current Status: What is real vs stubbed?
 
 This prototype implements the full structural skeleton of the system:
-- **Real (Verified)**: Database schemas, Webhook signature verification & idempotency, Inngest orchestration loops with agentRuns audit trails, LangGraph StateGraph flow, tRPC transport layer, React UI components, Synthetic Evaluation Data Generator.
+- **Real (Verified)**: Database schemas (with all strict enums and foreign-key constraints enforced by Postgres), Webhook signature verification & idempotency, Inngest orchestration loops with agentRuns audit trails, deterministic channel routing policies, exact spend and escalation ceilings, LangGraph StateGraph flow, tRPC transport layer, React UI components, Dynamic KPIs tracking live DB data, Synthetic Evaluation Data Generator.
 - **Stubbed**: 
   - `apps/web` is currently a single-page Vite app rather than a full TanStack Start SSR Nitro build.
   - Authentication (WorkOS) is completely stubbed out. The tRPC layer has basic role checks but no real session context.

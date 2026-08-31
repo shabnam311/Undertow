@@ -8,6 +8,7 @@
     "test": "bun test"
   },
   "devDependencies": {
-    "concurrently": "^10.0.5"
+    "concurrently": "^10.0.5",
+    "drizzle-kit": "^0.31.10"
   }
 }

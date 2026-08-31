@@ -1,6 +1,6 @@
 import { inngest } from './client';
 import { compiledWorkflow, decideNode } from '../agent/workflow';
-import { db, agentRuns, interventions, cases, stopEvents } from '@undertow/db';
+import { db, agentRuns, interventions, cases, stopEvents, merchants, customers } from '@undertow/db';
 import { eq, sql } from 'drizzle-orm';
 
 export const processRiskEvent = inngest.createFunction(
@@ -92,30 +92,53 @@ export const executeIntervention = inngest.createFunction(
     await step.run('execute-channel', async () => {
       const { caseId, channel, tier } = event.data;
 
-      // Ensure we don't spam if channel is none
       if (channel === 'none') return;
 
-      // Basic consent / opt-out check would go here
+      const caseRecord = await db.query.cases.findFirst({
+        where: eq(cases.id, caseId),
+        with: { customer: true, interventions: true }
+      });
+
+      if (!caseRecord || !caseRecord.customer) return;
+
+      const merchantRecord = await db.query.merchants.findFirst({
+        where: eq(merchants.id, caseRecord.merchantId)
+      });
+      if (!merchantRecord) return;
+
+      // Consent / opt-out check
+      if (!caseRecord.customer.consentChannels.includes(channel)) {
+        console.warn(`Customer has not consented to ${channel}`);
+        return;
+      }
 
       // Spend ceiling check
       const costMap: Record<string, number> = {
         'email': 5,
+        'sms': 15,
+        'voice': 30,
         'whatsapp': 25,
         'payment_link_retry': 10
       };
       const costPaise = costMap[channel] || 0;
-
-      // Real provider call (mocked for demo)
-      // await sendResendEmail(...)
+      const totalSpentSoFar = caseRecord.interventions.reduce((sum, inv) => sum + (inv.costPaise || 0), 0);
       
+      if (totalSpentSoFar + costPaise > merchantRecord.spendCeilingPaise) {
+        console.warn('Spend ceiling reached');
+        return;
+      }
+
       // Write intervention to DB
       await db.insert(interventions).values({
         caseId,
         channel,
+        templateId: `tpl_${channel}_default`,
+        templateVariables: { amount: caseRecord.amountAtRiskPaise },
         tier,
         status: 'sent',
         costPaise,
-        messageId: `mock-msg-${Date.now()}`
+        providerRef: `mock-msg-${Date.now()}`,
+        sentAt: new Date()
       });
 
       // Update case status
@@ -134,21 +157,23 @@ export const evaluateEscalation = inngest.createFunction(
       // Find cases that have been stuck in 'intervention_sent' for too long
       const stuckCases = await db.query.cases.findMany({
         where: eq(cases.status, 'intervention_sent'),
-        with: { interventions: { orderBy: (invs, { desc }) => [desc(invs.createdAt)], limit: 1 } }
+        with: { interventions: { orderBy: (invs, { desc }) => [desc(invs.tier)], limit: 1 } }
       });
 
       for (const caseRecord of stuckCases) {
         const latestIntervention = caseRecord.interventions[0];
-        if (!latestIntervention) continue;
+        if (!latestIntervention || !latestIntervention.sentAt) continue;
 
-        // If older than 24 hours
-        const ageHours = (Date.now() - latestIntervention.createdAt.getTime()) / (1000 * 60 * 60);
+        const ageHours = (Date.now() - latestIntervention.sentAt.getTime()) / (1000 * 60 * 60);
         
         if (ageHours > 24) {
-          // Escalate tier
+          const merchantRecord = await db.query.merchants.findFirst({
+            where: eq(merchants.id, caseRecord.merchantId)
+          });
+          const maxEscalation = merchantRecord ? merchantRecord.escalationCeiling : 3;
+
           const newTier = (latestIntervention.tier || 1) + 1;
-          if (newTier > 3) {
-            // Stop condition
+          if (newTier > maxEscalation) {
             await db.update(cases)
               .set({ status: 'stopped_unrecovered', closeReason: 'max_escalation_reached' })
               .where(eq(cases.id, caseRecord.id));
@@ -159,17 +184,16 @@ export const evaluateEscalation = inngest.createFunction(
               isSystemTriggered: true,
             });
           } else {
-            // Escalate
             await db.update(cases)
               .set({ status: 'escalated' })
               .where(eq(cases.id, caseRecord.id));
             
-            // Queue next intervention
+            // Queue next intervention while retaining intended channel logic
             await inngest.send({
               name: 'intervention/intended',
               data: {
                 caseId: caseRecord.id,
-                channel: 'whatsapp', // Escalate to higher touch channel
+                channel: latestIntervention.channel,
                 tier: newTier
               }
             });

@@ -3,7 +3,7 @@ import { inngest } from '../inngest/client';
 
 export const razorpayWebhook = new Hono();
 
-import { db, riskEvents, cases, customers } from '@undertow/db';
+import { db, riskEvents, cases, customers, merchants } from '@undertow/db';
 import { randomUUID, createHmac, timingSafeEqual } from 'crypto';
 import { eq } from 'drizzle-orm';
 
@@ -40,6 +40,13 @@ razorpayWebhook.post('/', async (c) => {
   const eventId = c.req.header('x-razorpay-event-id') || body.id;
   
   const payload = body.payload;
+  
+  // Fetch a valid merchant instead of hardcoding
+  const merchantList = await db.select({ id: merchants.id }).from(merchants).limit(1);
+  if (merchantList.length === 0) {
+    throw new Error('No merchants found in database');
+  }
+  const merchantId = merchantList[0].id;
 
   if (eventName === 'payment.failed') {
     const payment = payload.payment.entity;
@@ -56,9 +63,10 @@ razorpayWebhook.post('/', async (c) => {
       customerId = existingCustomer.id;
     } else {
       const [newCustomer] = await db.insert(customers).values({
-        merchantId: 'merchant-test-1',
+        merchantId: merchantId,
         externalRef: externalCustomerId,
-        name: 'Guest Customer',
+        displayName: 'Guest Customer',
+        consentChannels: ['email'],
         email: payment.email || null,
         phone: payment.contact || null
       }).returning();
@@ -67,7 +75,7 @@ razorpayWebhook.post('/', async (c) => {
 
     // Insert risk_event with idempotency
     const riskEventInsert = await db.insert(riskEvents).values({
-      merchantId: 'merchant-test-1', // Mock merchant for now
+      merchantId: merchantId,
       customerId: customerId,
       source: 'razorpay_webhook',
       externalEventId: eventId,
@@ -86,7 +94,7 @@ razorpayWebhook.post('/', async (c) => {
 
     // Open a case
     const [newCase] = await db.insert(cases).values({
-      merchantId: 'merchant-test-1',
+      merchantId: merchantId,
       customerId: customerId,
       riskEventId: riskEvent.id,
       amountAtRiskPaise: amountPaise,

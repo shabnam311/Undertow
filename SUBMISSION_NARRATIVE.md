@@ -16,7 +16,7 @@ It does not ask "did this fail?" It asks, *"why did this fail, how much is at ri
 - **Orchestration (Inngest)**: The recovery lifecycle (Detect, Diagnose, Decide, Act, Escalate) is managed by Inngest, ensuring that steps are durable, resumable, and auditable.
 - **Agentic Reasoning (LangGraph & Anthropic)**: 
   - The `detect` phase evaluates deterministic risk scoring.
-  - The `diagnose` phase uses LangGraph and Haiku 4.5 to translate raw JSON payloads into a controlled vocabulary of 9 root causes (e.g., `checkout_friction`, `issuer_risk_block`).
+  - The `diagnose` phase uses LangGraph and Claude 3.5 Haiku to translate raw JSON payloads into a controlled vocabulary of 9 root causes (e.g., `checkout_friction`, `issuer_risk_block`).
   - The `decide` phase maps the diagnosis to a multi-tiered intervention strategy.
 - **Data Model (Drizzle + Neon Postgres)**: Strongly typed schema utilizing `pgEnum`, relations, and constraints to ensure structural integrity across Customers, Risk Events, Cases, Interventions, and Audit Trails (`agentRuns`).
 - **Control Plane (React + Hono tRPC)**: A live operations dashboard displaying real-time aggregated KPIs (Amount at Risk, Recovered, Cost per Rupee) and a dynamic timeline queue of agent decisions.

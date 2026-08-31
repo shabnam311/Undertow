@@ -1,7 +1,8 @@
 import { randomUUID } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
-import { db, riskEvents, cases, customers, stopEvents, evaluationBatches } from '../client'; // Now we actually seed the DB!
+import { db } from '../client';
+import { riskEvents, cases, customers, stopEvents, evaluationBatches, merchants } from '../schema'; // Now we actually seed the DB!
 
 const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 const sample = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
@@ -22,10 +23,19 @@ const CUSTOMERS = [
 export async function runSeed() {
   console.log("Generating and seeding synthetic batch...");
   
-  const [evalBatch] = await db.insert(evaluationBatches).values({
-    name: `Synthetic Batch ${Date.now()}`,
-    description: 'Auto-generated synthetic dataset for precision/recall testing',
+  const [merchant] = await db.insert(merchants).values({
+    name: 'Test Merchant',
+    razorpayAccountId: 'acc_test123',
+    spendCeilingPaise: 500000,
+    escalationCeiling: 3,
   }).returning();
+
+  const [evalBatch] = await db.insert(evaluationBatches).values({
+    merchantId: merchant.id,
+    label: `Synthetic Batch ${Date.now()}`,
+  }).returning();
+
+  const merchantId = merchant.id;
 
   const casesData = [];
   
@@ -57,12 +67,12 @@ export async function runSeed() {
 
       const amountPaise = generateAmount();
       const customerName = sample(CUSTOMERS);
-      const merchantId = 'merchant-test-1';
       
       const [newCustomer] = await tx.insert(customers).values({
         merchantId,
         externalRef: `synth-cust-${randomUUID()}`,
-        name: customerName,
+        displayName: customerName,
+        consentChannels: ['email', 'whatsapp'],
       }).returning();
 
       const customerId = newCustomer.id;

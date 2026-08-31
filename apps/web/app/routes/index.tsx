@@ -25,6 +25,13 @@ function QueueView() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   const casesQuery = trpc.cases.list.useQuery();
+  const utils = trpc.useContext();
+  const approveMutation = trpc.cases.approveNextTier.useMutation({
+    onSuccess: () => {
+      utils.cases.list.invalidate();
+      if (selectedCaseId) utils.cases.get.invalidate({ id: selectedCaseId });
+    }
+  });
   
   useEffect(() => {
     if (!selectedCaseId && casesQuery.data && casesQuery.data.length > 0) {
@@ -145,6 +152,9 @@ function QueueView() {
               <span>Mandates</span>
             </div>
           </div>
+          {casesQuery.isLoading ? (
+            <div style={{ padding: '24px' }}>Loading cases...</div>
+          ) : (
           <table>
             <thead>
               <tr>
@@ -158,12 +168,23 @@ function QueueView() {
             </thead>
             <tbody id="queue-body">
               {casesQuery.data?.map(c => {
-                const path = sparkPath([2,2,3,4,4,5,6], 64, 20); // Static trend for now
+                const sparkVals = c.interventions?.length > 1 
+                  ? c.interventions.map((i: any) => i.tier)
+                  : [0, Math.max(c.currentTier || 0, 1), c.currentTier || 0];
+                
+                const path = sparkPath(sparkVals, 64, 20); 
                 const sparkColor = c.status === 'recovered' ? '#C89B3C' : (c.status === 'escalated' ? '#B5563A' : '#3C7A6E');
                 const isSelected = selectedCaseId === c.id;
                 
                 return (
-                  <tr key={c.id} className={isSelected ? 'selected' : ''} onClick={() => setSelectedCaseId(c.id)}>
+                  <tr 
+                    key={c.id} 
+                    className={isSelected ? 'selected' : ''} 
+                    onClick={() => setSelectedCaseId(c.id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if(e.key === 'Enter') setSelectedCaseId(c.id) }}
+                  >
                     <td>
                       <div className="cust">{c.customerName}</div>
                       <div className="cust-sub">{c.eventType}</div>
@@ -190,6 +211,7 @@ function QueueView() {
               })}
             </tbody>
           </table>
+          )}
         </div>
 
         <div className="panel">
@@ -218,7 +240,7 @@ function QueueView() {
                 </div>
               </div>
               <div className="timeline">
-                {caseDetailQuery.data.agentRuns?.map(run => (
+                {caseDetailQuery.data.agentRuns?.map((run: any) => (
                   <div key={run.id} className="tl-item done">
                     <div className="tl-node">{run.nodeName}</div>
                     <div className="tl-text">{run.reasoningSummary}</div>
@@ -227,12 +249,12 @@ function QueueView() {
                     </div>
                   </div>
                 ))}
-                {caseDetailQuery.data.interventions?.map(inv => (
+                {caseDetailQuery.data.interventions?.map((inv: any) => (
                   <div key={inv.id} className="tl-item done">
                     <div className="tl-node">Act — Tier {inv.tier}</div>
                     <div className="tl-text">Intervention via {inv.channel} (Status: {inv.status})</div>
                     <div className="tl-time">
-                      {new Date(inv.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(inv.sentAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
                 ))}
@@ -244,7 +266,13 @@ function QueueView() {
               </div>
               <div className="case-actions">
                 <button className="btn">Pause case</button>
-                <button className="btn primary">Approve next tier</button>
+                <button 
+                  className="btn primary"
+                  disabled={approveMutation.isLoading}
+                  onClick={() => approveMutation.mutate({ id: caseDetailQuery.data.id })}
+                >
+                  {approveMutation.isLoading ? 'Approving...' : 'Approve next tier'}
+                </button>
               </div>
             </>
           ) : (

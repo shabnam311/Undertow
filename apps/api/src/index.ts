@@ -6,6 +6,7 @@ import { inngest } from './inngest/client';
 import { processRiskEvent, executeIntervention, evaluateEscalation } from './inngest/functions';
 import { appRouter } from './trpc';
 import { cors } from 'hono/cors';
+import { db, merchants } from '@undertow/db';
 
 const app = new Hono();
 
@@ -19,13 +20,16 @@ app.use(
   cors(),
   trpcServer({
     router: appRouter,
-    createContext: (opts) => {
-      // Stubbed authentication - in real life read from Headers/JWT
+    createContext: async (opts) => {
+      // Stubbed authentication - fetch the seeded merchant dynamically
+      const merchantList = await db.select({ id: merchants.id }).from(merchants).limit(1);
+      const merchantId = merchantList.length > 0 ? merchantList[0].id : 'no-merchant';
+
       return {
         user: {
           id: 'user-1',
-          role: 'owner' as const,
-          merchantId: 'merchant-test-1',
+          role: 'analyst' as const, // matching UI
+          merchantId,
         },
       };
     },

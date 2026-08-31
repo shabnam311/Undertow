@@ -63,6 +63,7 @@ export const cases = pgTable('cases', {
   merchantId: uuid('merchant_id').references(() => merchants.id).notNull(),
   customerId: uuid('customer_id').references(() => customers.id).notNull(),
   riskEventId: uuid('risk_event_id').references(() => riskEvents.id).notNull(),
+  evaluationBatchId: uuid('evaluation_batch_id').references(() => evaluationBatches.id),
   status: text('status').notNull(), // 'detected' | 'diagnosing' | 'intervention_pending' | 'intervention_sent' | 'escalated' | 'recovered' | 'stopped_unrecovered' | 'stopped_manual'
   rootCause: text('root_cause'), // from controlled vocabulary
   rootCauseConfidence: integer('root_cause_confidence'), // 0-100
@@ -115,3 +116,40 @@ export const evaluationBatches = pgTable('evaluation_batches', {
   label: text('label').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
+
+import { relations } from 'drizzle-orm';
+
+export const casesRelations = relations(cases, ({ one, many }) => ({
+  customer: one(customers, {
+    fields: [cases.customerId],
+    references: [customers.id],
+  }),
+  riskEvent: one(riskEvents, {
+    fields: [cases.riskEventId],
+    references: [riskEvents.id],
+  }),
+  interventions: many(interventions),
+  agentRuns: many(agentRuns),
+  stopEvents: many(stopEvents),
+}));
+
+export const interventionsRelations = relations(interventions, ({ one }) => ({
+  case: one(cases, {
+    fields: [interventions.caseId],
+    references: [cases.id],
+  }),
+}));
+
+export const agentRunsRelations = relations(agentRuns, ({ one }) => ({
+  case: one(cases, {
+    fields: [agentRuns.caseId],
+    references: [cases.id],
+  }),
+}));
+
+export const stopEventsRelations = relations(stopEvents, ({ one }) => ({
+  case: one(cases, {
+    fields: [stopEvents.caseId],
+    references: [cases.id],
+  }),
+}));

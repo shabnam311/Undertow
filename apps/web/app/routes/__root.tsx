@@ -1,4 +1,4 @@
-import { Outlet, createRootRoute } from '@tanstack/react-router';
+import { Outlet, createRootRoute, Link } from '@tanstack/react-router';
 import '../style.css';
 
 export const Route = createRootRoute({
@@ -31,16 +31,12 @@ function RootComponent() {
 
             <nav className="nav">
               <div className="nav-group-label">Workspace</div>
-              <div className="nav-item active">Queue <span className="count">42</span></div>
-              <div className="nav-item">Batch evaluation</div>
-              <div className="nav-item">Customers</div>
-              <div className="nav-item">Policy</div>
-
-              <div className="nav-group-label">Saved views</div>
-              <div className="nav-item">High value <span className="count">9</span></div>
-              <div className="nav-item">Awaiting my review <span className="count">4</span></div>
-              <div className="nav-item">Near escalation ceiling <span className="count">3</span></div>
-              <div className="nav-item">Disputed, on hold <span className="count">2</span></div>
+              <Link to="/" className="nav-item" activeProps={{ className: 'active' }}>
+                Queue
+              </Link>
+              <Link to="/evaluation" className="nav-item" activeProps={{ className: 'active' }}>
+                Batch evaluation
+              </Link>
             </nav>
 
             <div className="rail-foot">
