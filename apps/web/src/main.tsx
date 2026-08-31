@@ -21,6 +21,9 @@ function App() {
       links: [
         httpBatchLink({
           url: 'http://localhost:3001/trpc',
+          headers: {
+            'Authorization': 'Bearer demo-secret-key'
+          }
         }),
       ],
     })

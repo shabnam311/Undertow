@@ -3,7 +3,7 @@ import { trpcServer } from '@hono/trpc-server';
 import { razorpayWebhook } from './webhooks/razorpay';
 import { serve } from 'inngest/hono';
 import { inngest } from './inngest/client';
-import { processRiskEvent, executeIntervention, evaluateEscalation } from './inngest/functions';
+import { processRiskEvent, executeIntervention, evaluateEscalation, processCaseClosed } from './inngest/functions';
 import { appRouter } from './trpc';
 import { cors } from 'hono/cors';
 import { db, merchants } from '@undertow/db';
@@ -21,7 +21,13 @@ app.use(
   trpcServer({
     router: appRouter,
     createContext: async (opts) => {
-      // Stubbed authentication - fetch the seeded merchant dynamically
+      // Auth gate for public demo safety
+      const authHeader = opts.req.header('Authorization');
+      if (authHeader !== 'Bearer demo-secret-key') {
+        return { user: null };
+      }
+
+      // Fetch the seeded merchant dynamically
       const merchantList = await db.select({ id: merchants.id }).from(merchants).limit(1);
       const merchantId = merchantList.length > 0 ? merchantList[0].id : 'no-merchant';
 
@@ -44,7 +50,7 @@ app.use(
   '/api/inngest',
   serve({
     client: inngest,
-    functions: [processRiskEvent, executeIntervention, evaluateEscalation],
+    functions: [processRiskEvent, executeIntervention, evaluateEscalation, processCaseClosed],
   })
 );
 

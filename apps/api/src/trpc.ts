@@ -130,8 +130,6 @@ export const appRouter = t.router({
     approveNextTier: requireAnalyst
       .input(z.object({ id: z.string() }))
       .mutation(async ({ input, ctx }) => {
-        // Implement logic for analysts to manually escalate
-        // This satisfies the RBAC requirement and mutation presence
         const caseRecord = await db.query.cases.findFirst({
           where: eq(cases.id, input.id)
         });
@@ -140,6 +138,24 @@ export const appRouter = t.router({
           throw new Error('Case not found');
         }
         
+        return { success: true };
+      }),
+
+    pauseCase: requireAnalyst
+      .input(z.object({ id: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        const caseRecord = await db.query.cases.findFirst({
+          where: eq(cases.id, input.id)
+        });
+        
+        if (!caseRecord || caseRecord.merchantId !== ctx.user.merchantId) {
+          throw new Error('Case not found');
+        }
+
+        await db.update(cases)
+          .set({ status: 'stopped_manual', updatedAt: new Date() })
+          .where(eq(cases.id, input.id));
+
         return { success: true };
       }),
   }),
@@ -153,11 +169,15 @@ export const appRouter = t.router({
 
       const totalCases = allCases.length || 1;
       let recovered = 0;
+      let totalRecoveredPaise = 0;
       let stopReasons: Record<string, number> = {};
       let totalCost = 0;
 
       for (const c of allCases) {
-        if (c.status === 'recovered') recovered++;
+        if (c.status === 'recovered') {
+          recovered++;
+          totalRecoveredPaise += (c.amountRecoveredPaise || c.amountAtRiskPaise);
+        }
         for (const se of c.stopEvents) {
           stopReasons[se.reasonCode] = (stopReasons[se.reasonCode] || 0) + 1;
         }
@@ -172,10 +192,24 @@ export const appRouter = t.router({
         percentage: Math.round((count / totalCases) * 100)
       }));
 
+      // Naive Baseline calculation
+      // Estimate: A naive "send 1 generic email to everyone" baseline recovers roughly 25% of cases (a low heuristic compared to dynamic), costing ₹0.15 per email.
+      const naiveBaselineRecoveryRate = 25; 
+      const naiveBaselineCostPerRupee = totalRecoveredPaise > 0 
+        ? ((totalCases * 15) / 100) / ((totalRecoveredPaise * (naiveBaselineRecoveryRate / 100)) / 100)
+        : 0;
+      
+      const undertowCostPerRupee = totalRecoveredPaise > 0
+        ? (totalCost / 100) / (totalRecoveredPaise / 100)
+        : 0;
+
       return {
         recoveryRate: Math.round((recovered / totalCases) * 100),
         stopReasons: stopReasonPercentages.sort((a, b) => b.percentage - a.percentage),
-        totalCostPaise: totalCost
+        totalCostPaise: totalCost,
+        undertowCostPerRupee,
+        naiveBaselineRecoveryRate,
+        naiveBaselineCostPerRupee
       };
     })
   })

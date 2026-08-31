@@ -7,8 +7,24 @@ import {
   boolean,
   uuid,
   varchar,
-  pgEnum
+  pgEnum,
+  customType
 } from 'drizzle-orm/pg-core';
+
+export const vector = customType<{ data: number[]; driverData: string }>({
+  dataType() {
+    return 'vector(384)';
+  },
+  toDriver(val: number[]): string {
+    return `[${val.join(',')}]`;
+  },
+  fromDriver(val: unknown): number[] {
+    if (typeof val === 'string') {
+      return JSON.parse(val) as number[];
+    }
+    return val as number[];
+  }
+});
 
 // Enums
 export const roleEnum = pgEnum('role', ['owner', 'analyst', 'viewer']);
@@ -72,6 +88,7 @@ export const cases = pgTable('cases', {
   openedAt: timestamp('opened_at').defaultNow().notNull(),
   closedAt: timestamp('closed_at'),
   closeReason: text('close_reason'),
+  embedding: vector('embedding'),
 });
 
 export const interventions = pgTable('interventions', {
@@ -153,3 +170,14 @@ export const stopEventsRelations = relations(stopEvents, ({ one }) => ({
     references: [cases.id],
   }),
 }));
+
+export const channelPerformance = pgTable('channel_performance', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  merchantId: uuid('merchant_id').references(() => merchants.id).notNull(),
+  channel: text('channel').notNull(),
+  tier: integer('tier').notNull(),
+  rootCause: text('root_cause'), // specific root cause context
+  alpha: integer('alpha').notNull().default(1), // Successes (prior)
+  beta: integer('beta').notNull().default(1),   // Failures (prior)
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});

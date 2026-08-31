@@ -1,11 +1,31 @@
 import { Hono } from 'hono';
 import { inngest } from '../inngest/client';
-
-export const razorpayWebhook = new Hono();
-
 import { db, riskEvents, cases, customers, merchants } from '@undertow/db';
 import { randomUUID, createHmac, timingSafeEqual } from 'crypto';
 import { eq } from 'drizzle-orm';
+
+export const razorpayWebhook = new Hono();
+
+const rateLimitMap = new Map<string, { count: number, resetAt: number }>();
+
+razorpayWebhook.use('/', async (c, next) => {
+  const ip = c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown';
+  const now = Date.now();
+  const windowMs = 60 * 1000; // 1 minute window
+  const maxHits = 100;
+  
+  let record = rateLimitMap.get(ip);
+  if (!record || record.resetAt < now) {
+    record = { count: 0, resetAt: now + windowMs };
+  }
+  record.count++;
+  rateLimitMap.set(ip, record);
+
+  if (record.count > maxHits) {
+    return c.json({ error: 'Too many requests' }, 429);
+  }
+  await next();
+});
 
 razorpayWebhook.post('/', async (c) => {
   const bodyText = await c.req.text();

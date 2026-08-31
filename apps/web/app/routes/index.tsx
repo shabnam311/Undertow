@@ -22,6 +22,7 @@ function sparkPath(vals: number[], w: number, h: number) {
 
 function QueueView() {
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('All');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   const casesQuery = trpc.cases.list.useQuery();
@@ -32,12 +33,27 @@ function QueueView() {
       if (selectedCaseId) utils.cases.get.invalidate({ id: selectedCaseId });
     }
   });
+
+  const pauseMutation = trpc.cases.pauseCase.useMutation({
+    onSuccess: () => {
+      utils.cases.list.invalidate();
+      if (selectedCaseId) utils.cases.get.invalidate({ id: selectedCaseId });
+    }
+  });
+
+  const filteredCases = (casesQuery.data || []).filter((c: any) => {
+    if (activeTab === 'All') return true;
+    if (activeTab === 'Payments') return c.eventType === 'payment_failed';
+    if (activeTab === 'Receivables') return c.eventType === 'invoice_overdue';
+    if (activeTab === 'Mandates') return c.eventType === 'mandate_bounced';
+    return true;
+  });
   
   useEffect(() => {
-    if (!selectedCaseId && casesQuery.data && casesQuery.data.length > 0) {
-      setSelectedCaseId(casesQuery.data[0].id);
+    if (!selectedCaseId && filteredCases.length > 0) {
+      setSelectedCaseId(filteredCases[0].id);
     }
-  }, [casesQuery.data, selectedCaseId]);
+  }, [filteredCases, selectedCaseId]);
 
   const caseDetailQuery = trpc.cases.get.useQuery(
     { id: selectedCaseId! },
@@ -70,7 +86,6 @@ function QueueView() {
       ctx.clearRect(0, 0, w, h);
       const mid = h * 0.62;
 
-      // secondary muted current line
       ctx.beginPath();
       for(let x = 0; x <= w; x += 4) {
         const y = mid + Math.sin((x * 0.006) + t * 0.6) * h * 0.10 + Math.sin((x * 0.017) + t * 0.3) * h * 0.05;
@@ -80,7 +95,6 @@ function QueueView() {
       ctx.lineWidth = 1.2 * window.devicePixelRatio;
       ctx.stroke();
 
-      // primary brass line
       ctx.beginPath();
       for(let x = 0; x <= w; x += 4) {
         const y = mid + Math.sin((x * 0.008) + t) * h * 0.16 + Math.sin((x * 0.023) + t * 1.4) * h * 0.06;
@@ -101,12 +115,22 @@ function QueueView() {
     };
   }, []);
 
+  const timeSinceUpdate = casesQuery.dataUpdatedAt 
+    ? Math.floor((Date.now() - casesQuery.dataUpdatedAt) / 60000) 
+    : 0;
+
   return (
     <main className="main">
       <div className="header">
         <div>
-          <h1>Recovery queue</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <h1>Recovery queue</h1>
+            <span className="stamp diagnosing" style={{ marginTop: '4px' }}>SHADOW MODE</span>
+          </div>
           <p>Live cases currently held by the agent, sorted by time in current tier.</p>
+        </div>
+        <div style={{ fontSize: '11px', color: 'var(--color-text-3)' }}>
+          {casesQuery.isFetching ? 'Refreshing...' : `Updated ${timeSinceUpdate === 0 ? 'just now' : `${timeSinceUpdate} mins ago`}`}
         </div>
       </div>
 
@@ -146,14 +170,21 @@ function QueueView() {
           <div className="panel-head">
             <h2>Open cases</h2>
             <div className="filter-tabs">
-              <span className="active">All</span>
-              <span>Payments</span>
-              <span>Receivables</span>
-              <span>Mandates</span>
+              <span className={activeTab === 'All' ? 'active' : ''} onClick={() => setActiveTab('All')}>All</span>
+              <span className={activeTab === 'Payments' ? 'active' : ''} onClick={() => setActiveTab('Payments')}>Payments</span>
+              <span className={activeTab === 'Receivables' ? 'active' : ''} onClick={() => setActiveTab('Receivables')}>Receivables</span>
+              <span className={activeTab === 'Mandates' ? 'active' : ''} onClick={() => setActiveTab('Mandates')}>Mandates</span>
             </div>
           </div>
           {casesQuery.isLoading ? (
             <div style={{ padding: '24px' }}>Loading cases...</div>
+          ) : filteredCases.length === 0 ? (
+            <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--color-text-3)' }}>
+              <p>Nothing at risk right now</p>
+              <p style={{ fontSize: '11px', marginTop: '8px' }}>
+                Last case closed {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
           ) : (
           <table>
             <thead>
@@ -167,7 +198,7 @@ function QueueView() {
               </tr>
             </thead>
             <tbody id="queue-body">
-              {casesQuery.data?.map(c => {
+              {filteredCases.map((c: any) => {
                 const sparkVals = c.interventions?.length > 1 
                   ? c.interventions.map((i: any) => i.tier)
                   : [0, Math.max(c.currentTier || 0, 1), c.currentTier || 0];
@@ -175,6 +206,7 @@ function QueueView() {
                 const path = sparkPath(sparkVals, 64, 20); 
                 const sparkColor = c.status === 'recovered' ? '#C89B3C' : (c.status === 'escalated' ? '#B5563A' : '#3C7A6E');
                 const isSelected = selectedCaseId === c.id;
+                const isDimmedCause = c.rootCause === 'disputed_or_service_issue' || c.rootCause === 'voluntary_cancellation_signal';
                 
                 return (
                   <tr 
@@ -189,7 +221,9 @@ function QueueView() {
                       <div className="cust">{c.customerName}</div>
                       <div className="cust-sub">{c.eventType}</div>
                     </td>
-                    <td style={{ color: 'var(--text-2)' }}>{c.rootCause || 'Unknown'}</td>
+                    <td style={{ color: isDimmedCause ? 'var(--color-text-3)' : 'var(--color-text-2)' }}>
+                      {c.rootCause || 'Unknown'}
+                    </td>
                     <td>
                       <div className="tier-dots">
                         {[0,1,2,3].map(i => (
@@ -205,6 +239,11 @@ function QueueView() {
                     </td>
                     <td>
                       <span className={`stamp ${c.status}`}>{c.status}</span>
+                      {c.status.startsWith('stopped') && c.stopEvents?.[0] && (
+                        <span className="stop-reason" style={{ fontSize: '10px', marginLeft: '6px', color: 'var(--color-text-3)' }}>
+                          ({c.stopEvents[0].reasonCode.replace(/_/g, ' ')})
+                        </span>
+                      )}
                     </td>
                   </tr>
                 );
@@ -234,8 +273,17 @@ function QueueView() {
                 </div>
                 <div>
                   <div className="label">Root cause</div>
-                  <div className="val" style={{ fontFamily: '"Public Sans", sans-serif', fontSize: '13px', color: 'var(--text-1)' }}>
+                  <div className="val" style={{ fontFamily: '"Public Sans", sans-serif', fontSize: '13px', color: 'var(--color-text-1)' }}>
                     {caseDetailQuery.data.rootCause || 'Unknown'}
+                  </div>
+                </div>
+                <div>
+                  <div className="label">Expected TTR</div>
+                  <div className="val" style={{ fontFamily: '"Public Sans", sans-serif', fontSize: '13px', color: 'var(--color-text-2)' }}>
+                    {caseDetailQuery.data.rootCause === 'insufficient_funds' ? 'P50: 12h | P90: 48h' : 
+                     caseDetailQuery.data.rootCause === 'checkout_friction' ? 'P50: 2h | P90: 6h' :
+                     caseDetailQuery.data.rootCause === 'issuer_risk_block' ? 'P50: 24h | P90: 72h' :
+                     'P50: 24h | P90: 5d'}
                   </div>
                 </div>
               </div>
@@ -265,7 +313,13 @@ function QueueView() {
                 </div>
               </div>
               <div className="case-actions">
-                <button className="btn">Pause case</button>
+                <button 
+                  className="btn"
+                  disabled={pauseMutation.isLoading}
+                  onClick={() => pauseMutation.mutate({ id: caseDetailQuery.data.id })}
+                >
+                  {pauseMutation.isLoading ? 'Pausing...' : 'Pause case'}
+                </button>
                 <button 
                   className="btn primary"
                   disabled={approveMutation.isLoading}
@@ -278,61 +332,6 @@ function QueueView() {
           ) : (
             <div style={{ padding: '24px' }}>Select a case to view details</div>
           )}
-        </div>
-      </div>
-
-      <div className="lower">
-        <div className="panel stopbar">
-          <div className="panel-head" style={{ border: 'none', padding: '0 0 14px' }}>
-            <h2>Stop reasons, held-out batch</h2>
-          </div>
-          <div className="stopbar-row">
-            <span className="stopbar-label">Recovered</span>
-            <div className="stopbar-track"><div className="stopbar-fill brass" style={{ width: '64%' }}></div></div>
-            <span className="stopbar-val">64%</span>
-          </div>
-          <div className="stopbar-row">
-            <span className="stopbar-label">Disputed, handed off</span>
-            <div className="stopbar-track"><div className="stopbar-fill rust" style={{ width: '11%' }}></div></div>
-            <span className="stopbar-val">11%</span>
-          </div>
-          <div className="stopbar-row">
-            <span className="stopbar-label">Ceiling reached</span>
-            <div className="stopbar-track"><div className="stopbar-fill" style={{ width: '9%' }}></div></div>
-            <span className="stopbar-val">9%</span>
-          </div>
-          <div className="stopbar-row">
-            <span className="stopbar-label">Max attempts</span>
-            <div className="stopbar-track"><div className="stopbar-fill" style={{ width: '8%' }}></div></div>
-            <span className="stopbar-val">8%</span>
-          </div>
-          <div className="stopbar-row">
-            <span className="stopbar-label">Undiagnosable</span>
-            <div className="stopbar-track"><div className="stopbar-fill" style={{ width: '8%' }}></div></div>
-            <span className="stopbar-val">8%</span>
-          </div>
-        </div>
-
-        <div className="panel baseline">
-          <div className="panel-head" style={{ border: 'none', padding: '0 0 14px' }}>
-            <h2>Against a fixed-cadence baseline</h2>
-          </div>
-          <div className="baseline-row">
-            <span className="baseline-name">Recovery rate, Undertow</span>
-            <span className="baseline-val brass">64%</span>
-          </div>
-          <div className="baseline-row">
-            <span className="baseline-name">Recovery rate, single-channel reminder</span>
-            <span className="baseline-val dim">37%</span>
-          </div>
-          <div className="baseline-row">
-            <span className="baseline-name">Cost per recovered ₹, Undertow</span>
-            <span className="baseline-val brass">₹0.014</span>
-          </div>
-          <div className="baseline-row">
-            <span className="baseline-name">Cost per recovered ₹, baseline</span>
-            <span className="baseline-val dim">₹0.031</span>
-          </div>
         </div>
       </div>
     </main>

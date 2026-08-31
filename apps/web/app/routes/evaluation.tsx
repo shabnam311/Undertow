@@ -42,31 +42,57 @@ function EvaluationComponent() {
         </div>
       </div>
 
-      <div className="panel mt-6">
-        <div className="panel-header">
-          <h3>Stop Reasons (Unrecovered)</h3>
-        </div>
-        <div className="panel-body">
-          {data.stopReasons.length === 0 ? (
-            <p>No stop events recorded.</p>
-          ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Reason Code</th>
-                  <th className="align-right">% of stopped cases</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.stopReasons.map((sr) => (
-                  <tr key={sr.reason}>
-                    <td><code>{sr.reason}</code></td>
-                    <td className="align-right">{sr.percentage}%</td>
+      <div className="lower">
+        <div className="panel mt-6">
+          <div className="panel-header">
+            <h3>Stop Reasons (Unrecovered)</h3>
+          </div>
+          <div className="panel-body">
+            {data.stopReasons.length === 0 ? (
+              <p>No stop events recorded.</p>
+            ) : (
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Reason Code</th>
+                    <th className="align-right">% of stopped cases</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+                </thead>
+                <tbody>
+                  {data.stopReasons.map((sr) => (
+                    <tr key={sr.reason}>
+                      <td><code>{sr.reason}</code></td>
+                      <td className="align-right">{sr.percentage}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        <div className="panel mt-6 baseline">
+          <div className="panel-header">
+            <h3>Against a fixed-cadence baseline</h3>
+          </div>
+          <div className="panel-body" style={{ padding: '0 18px 18px' }}>
+            <div className="baseline-row">
+              <span className="baseline-name">Recovery rate, Undertow</span>
+              <span className="baseline-val brass">{data.recoveryRate}%</span>
+            </div>
+            <div className="baseline-row">
+              <span className="baseline-name">Recovery rate, single-channel reminder</span>
+              <span className="baseline-val dim">{data.naiveBaselineRecoveryRate}%</span>
+            </div>
+            <div className="baseline-row">
+              <span className="baseline-name">Cost per recovered ₹, Undertow</span>
+              <span className="baseline-val brass">₹{data.undertowCostPerRupee.toFixed(3)}</span>
+            </div>
+            <div className="baseline-row">
+              <span className="baseline-name">Cost per recovered ₹, baseline estimate</span>
+              <span className="baseline-val dim">₹{data.naiveBaselineCostPerRupee.toFixed(3)}</span>
+            </div>
+          </div>
         </div>
       </div>
     </main>

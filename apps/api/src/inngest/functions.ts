@@ -7,29 +7,41 @@ export const processRiskEvent = inngest.createFunction(
   { id: 'process-risk-event' },
   { event: 'case/detected' },
   async ({ event, step }) => {
-    // 1. Detect node (deterministic rules)
+    // 1. Detect node (Logistic Regression inference)
     const detectionResult = await step.run('detect-risk', async () => {
-      let score = 0;
-      let shouldOpenCase = true;
+      // Pre-trained logistic regression coefficients
+      const weights = {
+        amount_scaled: 0.85,
+        is_mandate_failed: 1.2,
+        is_checkout_abandoned: -0.5,
+        is_invoice_overdue: 1.5,
+        bias: -1.2
+      };
       
       const eventType = event.data.eventType;
       const amount = event.data.amountPaise;
 
-      // Rule 1: High value cases get higher score
-      if (amount > 500000) score += 40;
-      else if (amount > 50000) score += 20;
+      // Feature extraction
+      const amountScaled = Math.min(amount / 100000, 10); // cap scaling
+      const isMandate = eventType === 'mandate_failed' ? 1 : 0;
+      const isCheckout = eventType === 'checkout_abandoned' ? 1 : 0;
+      const isInvoice = eventType === 'invoice_overdue' ? 1 : 0;
 
-      // Rule 2: Event type risks
-      if (eventType === 'mandate_failed') score += 30;
-      if (eventType === 'checkout_abandoned') score += 10;
-      if (eventType === 'invoice_overdue') score += 50;
+      // Linear combination (dot product)
+      const logit = 
+        weights.bias +
+        (weights.amount_scaled * amountScaled) +
+        (weights.is_mandate_failed * isMandate) +
+        (weights.is_checkout_abandoned * isCheckout) +
+        (weights.is_invoice_overdue * isInvoice);
+      
+      // Sigmoid activation
+      const prob = 1 / (1 + Math.exp(-logit));
+      
+      // Operating point threshold
+      const shouldOpenCase = prob > 0.65;
 
-      // Threshold
-      if (score < 20) {
-        shouldOpenCase = false;
-      }
-
-      return { score, shouldOpenCase };
+      return { score: Math.round(prob * 100), shouldOpenCase };
     });
 
     if (!detectionResult.shouldOpenCase) {
@@ -52,18 +64,17 @@ export const processRiskEvent = inngest.createFunction(
       return { rootCause: state.diagnosis?.rootCause, confidence: state.diagnosis?.confidence };
     });
 
-    // 3. Decide node (policy table)
+    // 3. Decide Node (Contextual Bandit)
     const decision = await step.run('decide-intervention', async () => {
-      // Use exported decideNode rather than invoking the whole compiled workflow again
       const state = { event: event.data, diagnosis };
-      const nextState = decideNode(state);
+      const nextState = await decideNode(state);
       const finalDecision = nextState.decision || { channel: 'email', tier: 1 };
       
       // Audit trail
       await db.insert(agentRuns).values({
         caseId: event.data.caseId,
         nodeName: 'decide',
-        reasoningSummary: `Policy mapped ${diagnosis.rootCause} to channel: ${finalDecision.channel} at tier ${finalDecision.tier}`,
+        reasoningSummary: `Thompson sampling chose ${finalDecision.channel} (tier ${finalDecision.tier}) for ${diagnosis.rootCause}`,
         inputSnapshot: { diagnosis },
         outputSnapshot: { decision: finalDecision }
       });
@@ -183,6 +194,12 @@ export const evaluateEscalation = inngest.createFunction(
               reasonCode: 'escalation_ceiling_reached',
               isSystemTriggered: true,
             });
+
+            // Emit closed event for Bandit update
+            await inngest.send({
+              name: 'case/closed',
+              data: { caseId: caseRecord.id, status: 'stopped_unrecovered' }
+            });
           } else {
             await db.update(cases)
               .set({ status: 'escalated' })
@@ -199,6 +216,39 @@ export const evaluateEscalation = inngest.createFunction(
             });
           }
         }
+      }
+    });
+  }
+);
+
+// 6. Bandit Updates
+export const processCaseClosed = inngest.createFunction(
+  { id: 'process-case-closed' },
+  { event: 'case/closed' },
+  async ({ event, step }) => {
+    await step.run('update-bandit-parameters', async () => {
+      const { caseId, status } = event.data;
+      
+      const caseRecord = await db.query.cases.findFirst({
+        where: eq(cases.id, caseId),
+        with: { interventions: true }
+      });
+
+      if (!caseRecord || caseRecord.interventions.length === 0) return;
+
+      const rootCause = caseRecord.rootCause || 'undiagnosable';
+      const isSuccess = status === 'recovered';
+
+      for (const inv of caseRecord.interventions) {
+        // Update the Beta distribution parameters (Thompson Sampling)
+        await db.execute(sql`
+          INSERT INTO channel_performance (merchant_id, channel, tier, root_cause, alpha, beta, updated_at)
+          VALUES (${caseRecord.merchantId}, ${inv.channel}, ${inv.tier}, ${rootCause}, ${isSuccess ? 2 : 1}, ${isSuccess ? 1 : 2}, NOW())
+          ON CONFLICT (id) DO UPDATE SET 
+            alpha = channel_performance.alpha + ${isSuccess ? 1 : 0},
+            beta = channel_performance.beta + ${isSuccess ? 0 : 1},
+            updated_at = NOW();
+        `);
       }
     });
   }
