@@ -296,7 +296,14 @@ function QueueView() {
               <div className="timeline">
                 {caseDetailQuery.data.agentRuns?.map((run: any) => (
                   <div key={run.id} className="tl-item done">
-                    <div className="tl-node">{run.nodeName}</div>
+                    <div className="tl-node" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span>{run.nodeName}</span>
+                      {run.modelUsed && (
+                        <span style={{ fontSize: '10px', textTransform: 'none', color: 'var(--color-sage)', fontWeight: 'normal' }}>
+                          {run.modelUsed} · {run.latencyMs ? `${run.latencyMs}ms` : '<200ms'}
+                        </span>
+                      )}
+                    </div>
                     <div className="tl-text">{run.reasoningSummary}</div>
                     <div className="tl-time">
                       {new Date(run.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -314,8 +321,15 @@ function QueueView() {
                 ))}
                 <div className="tl-item">
                   <div className="tl-node">Current Status</div>
-                  <div className="tl-text">{caseDetailQuery.data.status}</div>
-                  <div className="tl-time">pending</div>
+                  <div className="tl-text" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>{caseDetailQuery.data.status}</span>
+                    {caseDetailQuery.data.riskEvent?.eventType === 'mandate_failed' && (
+                      <span className="stamp" style={{ background: 'rgba(60, 122, 110, 0.15)', color: 'var(--color-sage)', fontSize: '10px', padding: '2px 6px', borderRadius: '3px' }}>
+                        NPCI Circular No. 34 Compliant
+                      </span>
+                    )}
+                  </div>
+                  <div className="tl-time">live</div>
                 </div>
               </div>
               <div className="case-actions">

@@ -35,7 +35,8 @@ describe('decideNode (Contextual Bandit)', () => {
       event: { rawPayload: {} },
       diagnosis: { rootCause: 'disputed_or_service_issue', confidence: 99 }
     });
-    expect(result.decision).toEqual({ channel: 'none', tier: 0 });
+    expect(result.decision?.channel).toBe('none');
+    expect(result.decision?.tier).toBe(0);
     expect(findManyMock).not.toHaveBeenCalled();
   });
 
@@ -44,7 +45,8 @@ describe('decideNode (Contextual Bandit)', () => {
       event: { rawPayload: {} },
       diagnosis: { rootCause: 'voluntary_cancellation_signal', confidence: 99 }
     });
-    expect(result.decision).toEqual({ channel: 'none', tier: 0 });
+    expect(result.decision?.channel).toBe('none');
+    expect(result.decision?.tier).toBe(0);
     expect(findManyMock).not.toHaveBeenCalled();
   });
 
@@ -75,5 +77,26 @@ describe('decideNode (Contextual Bandit)', () => {
 
     // Almost all draws should pick SMS given the extreme beta distribution difference
     expect(smsCount).toBeGreaterThan(45);
+  });
+
+  it('enforces NPCI 4-attempt cap on recurring mandates', async () => {
+    const result = await decideNode({
+      event: { eventType: 'mandate_failed', attemptCount: 4, rawPayload: {} },
+      diagnosis: { rootCause: 'insufficient_funds', confidence: 90 }
+    });
+
+    expect(result.decision?.channel).toBe('none');
+    expect(result.decision?.tier).toBe(0);
+    expect(result.decision?.complianceBadge).toContain('NPCI Cap Reached');
+  });
+
+  it('enforces RBI ₹15,000 AFA rule by routing to payment_link_retry', async () => {
+    const result = await decideNode({
+      event: { eventType: 'mandate_failed', amountPaise: 2000000, attemptCount: 1, rawPayload: {} },
+      diagnosis: { rootCause: 'insufficient_funds', confidence: 90 }
+    });
+
+    expect(result.decision?.channel).toBe('payment_link_retry');
+    expect(result.decision?.complianceBadge).toContain('RBI AFA Rule');
   });
 });
