@@ -2,7 +2,8 @@
 **Razorpay AI Buildathon 2026 — Track 03: AI Revenue Recovery**
 
 > **🌐 Live Demo (Instant Access, 1-Click Role Presets):** [Undertow](https://undertow-web-flax.vercel.app/)  
-> **🩺 Production API & Service Readiness:** [https://undertow-production-c0b8.up.railway.app/health](https://undertow-production-c0b8.up.railway.app/health)
+> **🩺 Production API & Service Readiness:** [https://undertow-production-c0b8.up.railway.app/health](https://undertow-production-c0b8.up.railway.app/health)  
+> *Note for Evaluators: Any password is accepted with 1-click test role presets (Owner/Analyst/Viewer) for immediate evaluation convenience.*
 
 Undertow is an autonomous, bounded, and fully auditable revenue recovery engine. It watches a merchant''s payment and billing surface for active revenue leakage (failed payments, abandoned checkouts, overdue B2B invoices, and failing UPI autopay mandates), diagnoses the root cause using an LLM with vector similarity few-shot context, and recovers capital using an online Thompson-Sampling Contextual Bandit bounded by strict spend ceilings, escalation ladders, and regulatory guardrails (NPCI Circular No. 34 & RBI ₹15,000 AFA Rule).
 
@@ -143,8 +144,16 @@ bun test
 
 ---
 
-## ⚠️ Known Limitations & Scoping Disclosures
+## ⚠️ Known Limitations & Failure Recovery (Architecture Disclosures)
 
-1. **Free-Tier Host Cold Starts**: Serverless database and API endpoints may experience a brief initial wake-up latency (~3-5 seconds) after prolonged idle periods.
-2. **Channel Delivery in Test Mode**: Real delivery is fully active for Email (Resend) and Webhook Link Retries; SMS and WhatsApp channels run in simulated test mode to prevent unsolicited messaging during evaluation.
-3. **Bandit Exploration Warm-up**: In fresh merchant environments with no priors, the Thompson Sampling algorithm starts with uniform $\text{Beta}(1, 1)$ distributions before converging to optimal channels as recovery webhooks are received.
+1. **Free-Tier Host Cold Starts**: Serverless database (Neon) and API endpoints (Railway) may experience a brief initial wake-up latency (~3-5 seconds) after prolonged idle periods. The frontend incorporates graceful loading states and resilient token handling to ensure zero UI freezes.
+2. **Multi-LLM Graceful Fallbacks**: When primary Groq LPU inference experiences rate-limiting or network timeouts, the pipeline automatically fails over to Anthropic Claude Haiku, and ultimately to deterministic heuristics so no customer payment remains undiagnosed.
+3. **Channel Delivery in Test Mode**: Real delivery is fully active for Email (Resend) and Webhook Link Retries; SMS and WhatsApp channels run in simulated test mode to prevent unsolicited messaging during evaluation.
+4. **Bandit Exploration Warm-up**: In fresh merchant environments with no priors, the Thompson Sampling algorithm starts with uniform $\text{Beta}(1, 1)$ distributions before converging to optimal channels as recovery webhooks are received.
+5. **Evaluator Authentication Mode**: In this buildathon release, role-based access control (Owner, Analyst, Viewer) is unlocked with 1-click test presets and demo authentication so evaluators can inspect permissions and trigger approvals with zero barrier to entry.
+
+---
+
+## 👥 Authors & Team
+- **Shabnam Ansari** &mdash; *Undertow Architecture & Engineering*
+- **License**: MIT

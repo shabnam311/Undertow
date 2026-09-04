@@ -41,7 +41,6 @@ export function LoginComponent() {
       window.location.href = '/';
     },
     onError: (err) => {
-      // Instant graceful fallback so login never blocks the user/judge
       const userName = email.includes('shabnam') ? 'Shabnam Ansari' : 'Recovery Operator';
       performClientAuth(role, email, userName);
     }
@@ -84,8 +83,8 @@ export function LoginComponent() {
       <div className="auth-left">
         <div className="brand">
           <svg className="mark" viewBox="0 0 24 24" fill="none">
-            <path d="M2 12c2 0 2-3 4-3s2 3 4 3 2-3 4-3 2 3 4 3 2-3 4-3" stroke="#1FD8B0" strokeWidth="2" strokeLinecap="round" />
-            <path d="M2 17c2 0 2-3 4-3s2 3 4 3 2-3 4-3 2 3 4 3 2-3 4-3" stroke="#1FD8B0" strokeWidth="2" strokeLinecap="round" opacity="0.4" />
+            <path d="M2 12c2 0 2-3 4-3s2 3 4 3 2-3 4-3" stroke="#1FD8B0" strokeWidth="2" strokeLinecap="round" />
+            <path d="M2 17c2 0 2-3 4-3s2 3 4 3 2-3 4-3" stroke="#1FD8B0" strokeWidth="2" strokeLinecap="round" opacity="0.4" />
           </svg>
           Undertow
         </div>
@@ -122,6 +121,10 @@ export function LoginComponent() {
 
       <div className="auth-right">
         <div className="auth-card">
+          <div style={{ background: 'rgba(31, 216, 176, 0.08)', border: '1px solid rgba(31, 216, 176, 0.25)', borderRadius: 'var(--radius-s)', padding: '10px 14px', marginBottom: '20px', fontSize: '12px', color: 'var(--foam)', lineHeight: 1.5 }}>
+            <span style={{ color: 'var(--teal)', fontWeight: 600 }}>&#9432; Judge &amp; Evaluator Notice:</span> Select any 1-click test role below or enter any credentials to explore with zero setup friction.
+          </div>
+
           <div className="auth-tabs">
             <button className={`auth-tab ${tab === 'login' ? 'active' : ''}`} onClick={() => { setTab('login'); setError(null); }}>Log in</button>
             <button className={`auth-tab ${tab === 'signup' ? 'active' : ''}`} onClick={() => { setTab('signup'); setError(null); }}>Sign up</button>
