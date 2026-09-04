@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import { db } from '../client';
-import { riskEvents, cases, customers, stopEvents, evaluationBatches, merchants } from '../schema';
+import { riskEvents, cases, customers, stopEvents, evaluationBatches, merchants, interventions } from '../schema';
 import { Inngest } from 'inngest';
 const inngest = new Inngest({ id: 'undertow' });
 
@@ -97,30 +97,35 @@ export async function runSeed() {
       riskEventId: riskEvent.id,
       evaluationBatchId: evalBatch.id,
       amountAtRiskPaise: amountPaise,
+      amountRecoveredPaise: status === 'recovered' ? amountPaise : 0,
       status: status as any,
       rootCause: rootCause as any,
+      openedAt: new Date(Date.now() - rand(1, 14) * 86400000),
+      closedAt: status === 'recovered' || status === 'stopped_unrecovered' ? new Date() : null,
     }).returning();
 
-    // Tell the orchestrator
-    await inngest.send({
-      name: 'case/detected',
-      data: {
-        caseId: newCase.id,
-        merchantId: merchantId,
-        source: 'synthetic_seed',
-        eventType: riskEvent.eventType,
-        amountPaise: riskEvent.amountPaise,
-        currency: 'INR',
-        customerId: customerId,
-        rawPayload: { generated: true },
+    // 3. Insert Interventions history
+    if (status !== 'detected' && status !== 'diagnosing') {
+      const tierCount = status === 'escalated' ? 2 : 1;
+      for (let t = 1; t <= tierCount; t++) {
+        await db.insert(interventions).values({
+          caseId: newCase.id,
+          channel: sample(['email', 'sms', 'whatsapp', 'payment_link_retry']),
+          templateId: `tpl_default_${t}`,
+          templateVariables: { amount: amountPaise },
+          tier: t,
+          status: 'sent',
+          costPaise: t === 1 ? 5 : 25,
+          sentAt: new Date(Date.now() - rand(1, 5) * 3600000),
+        });
       }
-    });
+    }
 
-    // 3. Insert Stop Event if applicable
+    // 4. Insert Stop Event if stopped
     if (status === 'stopped_unrecovered') {
       await db.insert(stopEvents).values({
         caseId: newCase.id,
-        reasonCode: 'disputed', // Note: schema says reasonCode, my old code said reason
+        reasonCode: rootCause === 'voluntary_cancellation_signal' ? 'voluntary_cancellation' : 'disputed',
         isSystemTriggered: true,
       });
     }

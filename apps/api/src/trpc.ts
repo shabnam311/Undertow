@@ -224,7 +224,9 @@ export const appRouter = t.router({
   evaluation: t.router({
     getBatchResults: protectedProcedure.query(async ({ ctx }) => {
       const allCases = await db.query.cases.findMany({
-        where: eq(cases.merchantId, ctx.user.merchantId),
+        where: ctx.user.merchantId !== 'no-merchant' 
+          ? eq(cases.merchantId, ctx.user.merchantId)
+          : undefined,
         with: { stopEvents: true, interventions: true }
       });
 
@@ -236,16 +238,22 @@ export const appRouter = t.router({
       let totalCost = 0;
 
       for (const c of allCases) {
-        totalAtRiskPaise += c.amountAtRiskPaise;
+        totalAtRiskPaise += (c.amountAtRiskPaise || 0);
         if (c.status === 'recovered') {
           recovered++;
-          totalRecoveredPaise += (c.amountRecoveredPaise || c.amountAtRiskPaise);
+          totalRecoveredPaise += (c.amountRecoveredPaise || c.amountAtRiskPaise || 0);
         }
-        for (const se of c.stopEvents) {
-          stopReasons[se.reasonCode] = (stopReasons[se.reasonCode] || 0) + 1;
+        if (c.stopEvents && Array.isArray(c.stopEvents)) {
+          for (const se of c.stopEvents) {
+            if (se.reasonCode) {
+              stopReasons[se.reasonCode] = (stopReasons[se.reasonCode] || 0) + 1;
+            }
+          }
         }
-        for (const inv of c.interventions) {
-          totalCost += inv.costPaise || 0;
+        if (c.interventions && Array.isArray(c.interventions)) {
+          for (const inv of c.interventions) {
+            totalCost += (inv.costPaise || 0);
+          }
         }
       }
 
@@ -256,26 +264,25 @@ export const appRouter = t.router({
       }));
 
       // Naive Baseline calculation
-      // Estimate: A naive "send 1 generic email to everyone" baseline recovers roughly 25% of total at-risk value, costing ₹0.05 per email (5 paise).
       const naiveBaselineRecoveryRate = 25; 
       const estimatedNaiveRecoveredPaise = totalAtRiskPaise * (naiveBaselineRecoveryRate / 100);
       const naiveBaselineTotalCostPaise = totalCases * 5; // 5 paise per email
       
       const naiveBaselineCostPerRupee = estimatedNaiveRecoveredPaise > 0 
-        ? (naiveBaselineTotalCostPaise / 100) / (estimatedNaiveRecoveredPaise / 100)
+        ? Number(((naiveBaselineTotalCostPaise / 100) / (estimatedNaiveRecoveredPaise / 100)).toFixed(4))
         : 0;
       
       const undertowCostPerRupee = totalRecoveredPaise > 0
-        ? (totalCost / 100) / (totalRecoveredPaise / 100)
+        ? Number(((totalCost / 100) / (totalRecoveredPaise / 100)).toFixed(4))
         : 0;
 
       return {
         recoveryRate: Math.round((recovered / totalCases) * 100),
         stopReasons: stopReasonPercentages.sort((a, b) => b.percentage - a.percentage),
         totalCostPaise: totalCost,
-        undertowCostPerRupee,
+        undertowCostPerRupee: isNaN(undertowCostPerRupee) ? 0 : undertowCostPerRupee,
         naiveBaselineRecoveryRate,
-        naiveBaselineCostPerRupee
+        naiveBaselineCostPerRupee: isNaN(naiveBaselineCostPerRupee) ? 0 : naiveBaselineCostPerRupee
       };
     })
   })

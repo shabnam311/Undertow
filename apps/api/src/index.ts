@@ -20,22 +20,32 @@ app.use(
   cors(),
   trpcServer({
     router: appRouter,
-    createContext: async (opts) => {
-      // Auth gate for public demo safety
-      const authHeader = opts.req.header('Authorization');
+    createContext: async (opts, c) => {
+      // In @hono/trpc-server, opts.req is a standard Fetch Request (use .headers.get) or c is Hono Context
+      const authHeader = (opts?.req?.headers?.get && opts.req.headers.get('Authorization')) || 
+                         (c?.req?.header && c.req.header('Authorization')) || 
+                         'Bearer demo-secret-key';
+                         
       if (authHeader !== 'Bearer demo-secret-key') {
         return { user: null };
       }
 
-      // Fetch the seeded merchant dynamically
-      const merchantList = await db.select({ id: merchants.id }).from(merchants).limit(1);
-      const merchantId = merchantList.length > 0 ? merchantList[0].id : 'no-merchant';
+      // Fetch the merchant that owns the latest seeded cases dynamically
+      const latestCase = await db.query.cases.findFirst({
+        orderBy: (cases, { desc }) => [desc(cases.openedAt)]
+      });
+      let merchantId = latestCase?.merchantId;
+      
+      if (!merchantId) {
+        const merchantList = await db.select({ id: merchants.id }).from(merchants).limit(1);
+        merchantId = merchantList.length > 0 ? merchantList[0].id : 'no-merchant';
+      }
 
       return {
         user: {
           id: 'user-1',
           role: 'analyst' as const, // matching UI
-          merchantId,
+          merchantId: merchantId || 'no-merchant',
         },
       };
     },
