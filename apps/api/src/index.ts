@@ -14,6 +14,29 @@ app.get('/', (c) => {
   return c.text('Undertow API is running!');
 });
 
+app.get('/health', async (c) => {
+  let dbStatus = 'connected';
+  try {
+    const m = await db.select({ id: merchants.id }).from(merchants).limit(1);
+    if (m.length === 0) dbStatus = 'empty_merchants';
+  } catch (err) {
+    dbStatus = 'unreachable';
+  }
+
+  return c.json({
+    status: dbStatus === 'connected' ? 'ok' : 'degraded',
+    version: '1.2.0',
+    timestamp: new Date().toISOString(),
+    services: {
+      database: dbStatus,
+      groq_lpu: process.env.GROQ_API_KEY ? 'configured' : 'missing',
+      anthropic_fallback: process.env.ANTHROPIC_API_KEY ? 'configured' : 'standby',
+      inngest_orchestrator: process.env.INNGEST_EVENT_KEY ? 'active' : 'local_dev',
+      razorpay_webhook_gate: process.env.RAZORPAY_WEBHOOK_SECRET ? 'active' : 'unconfigured',
+    }
+  });
+});
+
 // Attach tRPC with CORS and Context
 app.use(
   '/trpc/*',

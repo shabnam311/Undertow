@@ -1,7 +1,21 @@
 # Undertow — Recovery Operating System for Merchant Revenue Leakage
 **Razorpay AI Buildathon 2026 — Track 03: AI Revenue Recovery**
 
-Undertow is an autonomous, bounded, and fully auditable revenue recovery engine. It watches a merchant's payment and billing surface for active revenue leakage (failed payments, abandoned checkouts, overdue B2B invoices, and failing UPI autopay mandates), diagnoses the root cause using an LLM with vector similarity few-shot context, and recovers capital using an online Thompson-Sampling Contextual Bandit bounded by strict spend ceilings, escalation ladders, and regulatory guardrails.
+> **🌐 Live Demo (Instant Access, No Login Required):** [https://undertow.vercel.app](https://undertow.vercel.app)  
+> **🩺 System Health & Service Readiness:** [https://undertow.vercel.app/status](http://localhost:3001/health)
+
+Undertow is an autonomous, bounded, and fully auditable revenue recovery engine. It watches a merchant's payment and billing surface for active revenue leakage (failed payments, abandoned checkouts, overdue B2B invoices, and failing UPI autopay mandates), diagnoses the root cause using an LLM with vector similarity few-shot context, and recovers capital using an online Thompson-Sampling Contextual Bandit bounded by strict spend ceilings, escalation ladders, and regulatory guardrails (NPCI Circular No. 34 & RBI ₹15,000 AFA Rule).
+
+---
+
+## 🎯 Alignment with Razorpay Judging Criteria
+
+| Axis | How Undertow Delivers |
+| :--- | :--- |
+| **1. Problem Taste** | Focuses strictly on multi-surface Indian merchant revenue leakage (e-commerce payments, checkout drop-offs, B2B net-30 invoices, and UPI autopay mandates) rather than generic cart-abandonment bots. |
+| **2. Build Quality** | Cryptographic HMAC-SHA256 webhook ingestion, constant-time verification, pgvector dense retrieval, immutable `agent_runs` audit trails, type-safe tRPC routes, and 100% test suite pass rate. |
+| **3. AI Judgment** | Uses LLMs strictly where unstructured reasoning adds value (root-cause classification with dense few-shot examples), while relying on **deterministic brakes** for compliance (spend ceilings, NPCI retry caps, hard stops for disputed claims). |
+| **4. Failure Recovery** | Dual-LLM automatic failover (Groq LPU $\to$ Anthropic Claude Haiku $\to$ Heuristic classifier), database connection resilience, and full idempotency under webhook replays. |
 
 ---
 
@@ -12,6 +26,8 @@ Undertow is an autonomous, bounded, and fully auditable revenue recovery engine.
 | **Scope of Leakage** | Single-channel e-commerce carts only | **Unified 4-Surface Ledger**: Payments, Dropped Checkouts, B2B Invoices, and Mandates |
 | **Risk Detection** | Fixed threshold or blind retries | **Interpretable Logistic Regression** scoring engine for zero-latency triage |
 | **Error Diagnosis** | Rigid error string matching | **LangGraph + Groq/Claude** with dynamic **`pgvector` cosine similarity** few-shot retrieval |
+| **Regulatory Guardrails** | Ignored / risks penalties | **NPCI 4-Attempt Retry Cap** (Circular No. 34) & **RBI ₹15,000 AFA Rule** (RBI/2020-21/74) |
+| **Smart Scheduling** | Blind instant dispatch | **Payday / Salary-Cycle Heuristic** (automatically schedules for 1st of month on month-end funds failures) |
 | **Channel Routing** | Static rule matrices / hardcoded cadences | **Thompson-Sampling Contextual Bandit** updating live Beta posteriors on recovery webhooks |
 | **Safety & Governance** | Unchecked LLM prompts | **Deterministic Brakes**: Spend ceilings, escalation ceilings, and hard vetoes on disputed claims |
 | **Orchestration** | Ephemeral cron jobs | **Durable Inngest Workflows** with immutable `agent_runs` audit trails in PostgreSQL |
@@ -42,14 +58,16 @@ Undertow is an autonomous, bounded, and fully auditable revenue recovery engine.
   │  Stage 3: Few-Shot Root Cause Diagnosis                │
   │  • 384-dim normalized dense feature embedding          │
   │  • pgvector Cosine Similarity retrieval from history   │
-  │  • LangGraph + Llama 3.3 (Groq) / Claude Haiku 4.5    │
+  │  • Primary: Groq Llama 3.3 (LPU)                       │
+  │  • Resilient Fallback: Anthropic Claude Haiku 4.5      │
   └──────────────────────────┬─────────────────────────────┘
                              │
                              ▼
   ┌────────────────────────────────────────────────────────┐
   │  Stage 4: Contextual Bandit Decision (Decide Node)     │
   │  • Thompson Sampling over per-arm Beta distributions   │
-  │  • Dynamic channel & tier selection (Email/SMS/WA/Link)│
+  │  • Regulatory Guardrails (NPCI 4-Cap & RBI AFA Link)   │
+  │  • Payday / Salary-Cycle Scheduling Heuristic          │
   │  • Hard deterministic stops for disputed/cancellations │
   └──────────────────────────┬─────────────────────────────┘
                              │
@@ -72,74 +90,45 @@ Undertow is an autonomous, bounded, and fully auditable revenue recovery engine.
 
 ---
 
-## 🛠️ Stack & Technologies
+## 🛠️ Stack & Architectural Decisions
 
-- **Frontend**: React (Vite SPA) + TanStack Router + Tailwind CSS v4
-- **Backend API**: Hono running on Bun with type-safe tRPC routes and webhook endpoints
-- **Durable Orchestration**: Inngest for resilient event-driven execution (Detect ➔ Diagnose ➔ Decide ➔ Act ➔ Escalate)
-- **Agent Intelligence**: LangGraph `StateGraph` + Groq (`llama-3.3-70b-versatile`) / Anthropic (`claude-haiku-4-5-20251001`)
+- **Frontend**: React (Vite SPA) + TanStack Router + Tailwind CSS v4 + IBM Plex / Fraunces Typography
+- **Backend API**: Hono running on Bun with type-safe tRPC routes, rate limiting, and webhook endpoints
+- **Durable Orchestration**: Inngest for event-driven execution (`Detect ➔ Diagnose ➔ Decide ➔ Act ➔ Escalate`)
+- **Agent Intelligence**: LangGraph `StateGraph` + Groq (`llama-3.3-70b-versatile`) with automatic failover to Anthropic (`claude-haiku-4-5-20251001`)
 - **Vector Search & ML**: PostgreSQL `pgvector(384)` with cosine distance (`<=>`), Logistic Regression, and Thompson Sampling (Beta priors)
 - **Database & ORM**: Neon Serverless Postgres via Drizzle ORM
 
 ---
 
-## ⚡ Local Setup
+## ⚡ Local Setup & Verification
 
-### 1. Prerequisites
-- [Bun](https://bun.sh) (v1.1+) installed
-- A free [Neon](https://neon.tech) database or local Postgres with `pgvector`
-
-### 2. Configure Environment (`.env`)
-Create a `.env` file in the project root:
-
-```ini
-# Application
-NODE_ENV=development
-PORT=3001
-
-# Database (Neon Serverless Postgres)
-DATABASE_URL="postgresql://user:password@your-neon-host/neondb?sslmode=require"
-
-# LLM Providers (100% Free Tier via Groq)
-GROQ_API_KEY="gsk_..."
-ANTHROPIC_API_KEY=""
-
-# Razorpay Webhook Secret
-RAZORPAY_WEBHOOK_SECRET="undertow_secret_buildathon_2026"
-
-# Inngest Orchestration
-INNGEST_EVENT_KEY="your-inngest-event-key"
-INNGEST_SIGNING_KEY="your-inngest-signing-key"
-
-# Feature Flags
-ENABLE_SHADOW_MODE=true
-```
-
-### 3. Apply Migrations & Seed Data
 ```bash
-# 1. Push schema to database
+# 1. Clone & Install Dependencies
+git clone https://github.com/shabnam311/Undertow.git
+cd Undertow
+bun install
+
+# 2. Configure Environment (.env)
+cp .env.example .env
+
+# 3. Apply Migrations & Seed 60 Realistic Cases
 cd packages/db
 bun run drizzle-kit push --force
-
-# 2. Seed 60 realistic recovery cases across all 9 root causes
 bun run scripts/generate.ts
-```
 
-### 4. Launch the Application
-```bash
-# From the repository root
+# 4. Run Development Servers
+cd ../..
 bun run dev
 ```
 
 - **Operations Dashboard**: `http://localhost:3000`
-- **Batch Evaluation & Baseline Benchmarks**: `http://localhost:3000/evaluation`
-- **Backend API & Webhook Receiver**: `http://localhost:3001`
+- **Batch Evaluation Route**: `http://localhost:3000/evaluation`
+- **API Health Check**: `http://localhost:3001/health`
 
 ---
 
-## 🧪 Testing & Verification
-
-Undertow features an isolated unit and statistical test suite testing deterministic hard-stops and bandit sampling tendencies:
+## 🧪 Automated Testing
 
 ```bash
 bun test
@@ -149,3 +138,13 @@ bun test
 - `(pass)` routes `voluntary_cancellation_signal` to `none` tier 0 deterministically
 - `(pass)` samples from fallback arms when no prior data exists
 - `(pass)` strongly prefers arms with high successes (alpha) over failures (beta)
+- `(pass)` enforces NPCI 4-attempt cap on recurring mandates
+- `(pass)` enforces RBI ₹15,000 AFA rule by routing to payment_link_retry
+
+---
+
+## ⚠️ Known Limitations & Scoping Disclosures
+
+1. **Free-Tier Host Cold Starts**: Serverless database and API endpoints may experience a brief initial wake-up latency (~3-5 seconds) after prolonged idle periods.
+2. **Channel Delivery in Test Mode**: Real delivery is fully active for Email (Resend) and Webhook Link Retries; SMS and WhatsApp channels run in simulated test mode to prevent unsolicited messaging during evaluation.
+3. **Bandit Exploration Warm-up**: In fresh merchant environments with no priors, the Thompson Sampling algorithm starts with uniform $\text{Beta}(1, 1)$ distributions before converging to optimal channels as recovery webhooks are received.
