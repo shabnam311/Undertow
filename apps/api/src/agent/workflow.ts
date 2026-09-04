@@ -1,5 +1,6 @@
 import { StateGraph, START, END } from '@langchain/langgraph';
 import { ChatAnthropic } from '@langchain/anthropic';
+import { ChatGroq } from '@langchain/groq';
 import { z } from 'zod';
 
 // Define the state shape
@@ -68,12 +69,19 @@ const diagnoseNode = async (state: AgentState) => {
     }
   }
 
-  // 4. LLM fallback for ambiguous cases
-  const llm = new ChatAnthropic({ 
-    modelName: 'claude-haiku-4-5-20251001', 
-    temperature: 0,
-    maxTokens: 512
-  });
+  // 4. LLM fallback for ambiguous cases (Supports permanent Free-Tier Groq & Claude)
+  const llm = process.env.GROQ_API_KEY 
+    ? new ChatGroq({
+        model: 'llama-3.3-70b-versatile',
+        apiKey: process.env.GROQ_API_KEY,
+        temperature: 0,
+      })
+    : new ChatAnthropic({ 
+        modelName: 'claude-haiku-4-5-20251001', 
+        apiKey: process.env.ANTHROPIC_API_KEY,
+        temperature: 0,
+        maxTokens: 512
+      });
 
   const diagnosisSchema = z.object({
     rootCause: z.enum([
