@@ -1,4 +1,4 @@
-﻿import { Outlet, createRootRoute, Link, useLocation } from '@tanstack/react-router';
+﻿import { Outlet, createRootRoute, Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import '../style.css';
 
@@ -8,22 +8,27 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   
-  const [user, setUser] = useState<{ name: string; email: string; role: string; merchantName: string }>({
-    name: 'Shabnam Ansari',
-    email: 'analyst@undertow.demo',
-    role: 'owner',
-    merchantName: 'Meridian Textiles'
-  });
+  const [user, setUser] = useState<{ name: string; email: string; role: string; merchantName: string } | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     try {
+      const token = localStorage.getItem('undertow_token');
       const stored = localStorage.getItem('undertow_user');
-      if (stored) {
+      
+      const isAuthPage = location.pathname === '/login';
+
+      if (!token && !isAuthPage) {
+        // Not logged in -> Redirect directly to login page
+        navigate({ to: '/login' });
+      } else if (stored) {
         setUser(JSON.parse(stored));
       }
     } catch (e) {}
+    setAuthChecked(true);
   }, [location.pathname]);
 
   const handleLogout = () => {
@@ -38,7 +43,18 @@ function RootComponent() {
     return <Outlet />;
   }
 
-  const initials = (user.name || 'SA')
+  if (!authChecked && !localStorage.getItem('undertow_token')) {
+    return null;
+  }
+
+  const currentUser = user || {
+    name: 'Shabnam Ansari',
+    email: 'analyst@undertow.demo',
+    role: 'owner',
+    merchantName: 'Meridian Textiles'
+  };
+
+  const initials = (currentUser.name || 'SA')
     .split(' ')
     .map(w => w[0])
     .join('')
@@ -78,9 +94,9 @@ function RootComponent() {
         </nav>
 
         <div className="rail-foot">
-          Signed in as<br /><span className="who">{user.name}</span><br />
+          Signed in as<br /><span className="who">{currentUser.name}</span><br />
           <span style={{ fontSize: '11px', color: 'var(--muted-2)' }}>
-            {user.role ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : 'Owner'} · {user.merchantName || 'Meridian Textiles'}
+            {currentUser.role ? (currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1)) : 'Owner'} · {currentUser.merchantName || 'Meridian Textiles'}
           </span>
           <div className="mode-badge">
             <span className="dot"></span>
@@ -103,8 +119,8 @@ function RootComponent() {
               {dropdownOpen && (
                 <div className="dropdown show" style={{ position: 'absolute', right: 0, top: '44px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-m)', width: '210px', padding: '6px', zIndex: 100, boxShadow: '0 12px 32px rgba(0,0,0,0.5)' }}>
                   <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-soft)', marginBottom: '4px' }}>
-                    <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--foam)' }}>{user.name}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--muted-2)' }}>{user.email}</div>
+                    <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--foam)' }}>{currentUser.name}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--muted-2)' }}>{currentUser.email}</div>
                   </div>
                   <Link to="/settings" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: 'var(--foam)', fontSize: '13px', padding: '8px 10px', borderRadius: 'var(--radius-s)' }} onClick={() => setDropdownOpen(false)}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
