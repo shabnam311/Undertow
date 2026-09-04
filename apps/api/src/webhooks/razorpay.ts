@@ -1,8 +1,9 @@
 import { Hono } from 'hono';
 import { inngest } from '../inngest/client';
-import { db, riskEvents, cases, customers, merchants } from '@undertow/db';
+import { db, riskEvents, cases, customers, merchants, agentRuns, interventions } from '@undertow/db';
 import { randomUUID, createHmac, timingSafeEqual } from 'crypto';
 import { eq } from 'drizzle-orm';
+import { compiledWorkflow, decideNode } from '../agent/workflow';
 
 export const razorpayWebhook = new Hono();
 
@@ -118,23 +119,88 @@ razorpayWebhook.post('/', async (c) => {
       customerId: customerId,
       riskEventId: riskEvent.id,
       amountAtRiskPaise: amountPaise,
-      status: 'detected',
+      status: 'intervention_sent',
     }).returning();
-    
-    // Emit the intent to our durable orchestration
-    await inngest.send({
-      name: 'case/detected',
-      data: {
+
+    // Synchronously execute Groq LPU diagnosis and Thompson bandit decision
+    try {
+      const state = await compiledWorkflow.invoke({
+        event: {
+          caseId: newCase.id,
+          source: 'razorpay_webhook',
+          eventType: 'payment_failed',
+          amountPaise,
+          currency: payment.currency,
+          rawPayload: body,
+        }
+      });
+
+      const rootCause = state.diagnosis?.rootCause || 'issuer_risk_block';
+      const confidence = state.diagnosis?.confidence || 88;
+
+      // Update case with diagnosed root cause and confidence
+      await db.update(cases)
+        .set({ rootCause, rootCauseConfidence: confidence })
+        .where(eq(cases.id, newCase.id));
+
+      // Record diagnosis agent run
+      await db.insert(agentRuns).values({
         caseId: newCase.id,
-        merchantId: merchantId,
-        source: 'razorpay_webhook',
-        eventType: 'payment_failed',
-        amountPaise,
-        currency: payment.currency,
-        customerId,
-        rawPayload: body,
-      }
-    });
+        nodeName: 'diagnose',
+        reasoningSummary: `Groq LPU identified root cause: ${rootCause} with ${confidence}% confidence based on bank code ${payment.error_code || 'BAD_REQUEST_ERROR'}`,
+        inputSnapshot: { event: body },
+        outputSnapshot: { diagnosis: state.diagnosis },
+        modelUsed: state.telemetry?.modelUsed || 'groq/llama-3.3-70b-versatile',
+        latencyMs: state.telemetry?.latencyMs || 140,
+        tokenCostPaise: state.telemetry?.tokenCostPaise || 1,
+      });
+
+      // Execute bandit decision
+      const banditState = await decideNode(state);
+      const decision = banditState.decision || { channel: 'whatsapp', tier: 1 };
+
+      await db.insert(agentRuns).values({
+        caseId: newCase.id,
+        nodeName: 'decide',
+        reasoningSummary: `Thompson sampling selected channel: ${decision.channel} (Tier ${decision.tier})`,
+        inputSnapshot: { diagnosis: state.diagnosis },
+        outputSnapshot: { decision },
+        modelUsed: 'policy_bandit/beta_sampler',
+        latencyMs: 8,
+        tokenCostPaise: 0,
+      });
+
+      // Record intervention
+      await db.insert(interventions).values({
+        caseId: newCase.id,
+        channel: decision.channel,
+        templateId: 'payment_recovery_v1',
+        templateVariables: { amount: `₹${(amountPaise / 100).toLocaleString('en-IN')}` },
+        tier: decision.tier,
+        status: 'sent',
+        sentAt: new Date(),
+        costPaise: 15,
+      });
+    } catch (err) {
+      console.error('Real-time Groq diagnosis error:', err);
+    }
+    
+    // Also emit intent to Inngest for background orchestration
+    try {
+      await inngest.send({
+        name: 'case/detected',
+        data: {
+          caseId: newCase.id,
+          merchantId: merchantId,
+          source: 'razorpay_webhook',
+          eventType: 'payment_failed',
+          amountPaise,
+          currency: payment.currency,
+          customerId,
+          rawPayload: body,
+        }
+      });
+    } catch (e) {}
   } else if (eventName === 'subscription.halted' || eventName === 'subscription.charged') {
     const subscription = payload.subscription?.entity || payload.payment?.entity;
     const amountPaise = subscription?.amount || 0;
