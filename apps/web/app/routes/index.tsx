@@ -91,7 +91,7 @@ function QueueView() {
         const y = mid + Math.sin((x * 0.006) + t * 0.6) * h * 0.10 + Math.sin((x * 0.017) + t * 0.3) * h * 0.05;
         if(x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
-      ctx.strokeStyle = 'rgba(60,122,110,0.55)';
+      ctx.strokeStyle = 'rgba(31, 216, 176, 0.45)';
       ctx.lineWidth = 1.2 * window.devicePixelRatio;
       ctx.stroke();
 
@@ -100,7 +100,7 @@ function QueueView() {
         const y = mid + Math.sin((x * 0.008) + t) * h * 0.16 + Math.sin((x * 0.023) + t * 1.4) * h * 0.06;
         if(x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
-      ctx.strokeStyle = '#C89B3C';
+      ctx.strokeStyle = '#1FD8B0';
       ctx.lineWidth = 1.6 * window.devicePixelRatio;
       ctx.stroke();
 
