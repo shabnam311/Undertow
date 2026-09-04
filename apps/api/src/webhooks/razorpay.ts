@@ -135,10 +135,129 @@ razorpayWebhook.post('/', async (c) => {
         rawPayload: body,
       }
     });
-  } else if (eventName === 'payment.captured' || eventName === 'payment.authorized') {
-    const payment = payload.payment.entity;
-    const externalCustomerId = payment.customer_id;
-    const amountPaise = payment.amount;
+  } else if (eventName === 'subscription.halted' || eventName === 'subscription.charged') {
+    const subscription = payload.subscription?.entity || payload.payment?.entity;
+    const amountPaise = subscription?.amount || 0;
+    const externalCustomerId = subscription?.customer_id || 'mandate-cust-' + randomUUID();
+    const isFailure = eventName === 'subscription.halted';
+
+    if (isFailure) {
+      const existingCustomer = await db.query.customers.findFirst({
+        where: eq(customers.externalRef, externalCustomerId)
+      });
+      let customerId = existingCustomer?.id;
+      if (!customerId) {
+        const [newCust] = await db.insert(customers).values({
+          merchantId,
+          externalRef: externalCustomerId,
+          displayName: 'Recurring Mandate User',
+          consentChannels: ['whatsapp', 'sms', 'email'],
+          email: subscription?.email || null,
+          phone: subscription?.contact || null
+        }).returning();
+        customerId = newCust.id;
+      }
+
+      const riskEventInsert = await db.insert(riskEvents).values({
+        merchantId,
+        customerId,
+        source: 'razorpay_webhook',
+        externalEventId: eventId,
+        eventType: 'mandate_failed',
+        amountPaise,
+        currency: subscription?.currency || 'INR',
+        rawPayload: body,
+        occurredAt: new Date(),
+      }).onConflictDoNothing({ target: riskEvents.externalEventId }).returning();
+
+      if (riskEventInsert.length > 0) {
+        const [newCase] = await db.insert(cases).values({
+          merchantId,
+          customerId,
+          riskEventId: riskEventInsert[0].id,
+          amountAtRiskPaise: amountPaise,
+          status: 'detected',
+        }).returning();
+
+        await inngest.send({
+          name: 'case/detected',
+          data: {
+            caseId: newCase.id,
+            merchantId,
+            source: 'razorpay_webhook',
+            eventType: 'mandate_failed',
+            amountPaise,
+            currency: subscription?.currency || 'INR',
+            customerId,
+            attemptCount: subscription?.auth_attempts || 1,
+            rawPayload: body,
+          }
+        });
+      }
+    }
+  } else if (eventName === 'invoice.expired' || eventName === 'invoice.paid') {
+    const invoice = payload.invoice?.entity;
+    const amountPaise = invoice?.amount || 0;
+    const externalCustomerId = invoice?.customer_id || 'inv-cust-' + randomUUID();
+    const isOverdue = eventName === 'invoice.expired';
+
+    if (isOverdue) {
+      const existingCustomer = await db.query.customers.findFirst({
+        where: eq(customers.externalRef, externalCustomerId)
+      });
+      let customerId = existingCustomer?.id;
+      if (!customerId) {
+        const [newCust] = await db.insert(customers).values({
+          merchantId,
+          externalRef: externalCustomerId,
+          displayName: invoice?.customer_name || 'B2B Enterprise Client',
+          consentChannels: ['email', 'whatsapp'],
+          email: invoice?.customer_email || null,
+          phone: invoice?.customer_contact || null
+        }).returning();
+        customerId = newCust.id;
+      }
+
+      const riskEventInsert = await db.insert(riskEvents).values({
+        merchantId,
+        customerId,
+        source: 'razorpay_webhook',
+        externalEventId: eventId,
+        eventType: 'invoice_overdue',
+        amountPaise,
+        currency: invoice?.currency || 'INR',
+        rawPayload: body,
+        occurredAt: new Date(),
+      }).onConflictDoNothing({ target: riskEvents.externalEventId }).returning();
+
+      if (riskEventInsert.length > 0) {
+        const [newCase] = await db.insert(cases).values({
+          merchantId,
+          customerId,
+          riskEventId: riskEventInsert[0].id,
+          amountAtRiskPaise: amountPaise,
+          status: 'detected',
+        }).returning();
+
+        await inngest.send({
+          name: 'case/detected',
+          data: {
+            caseId: newCase.id,
+            merchantId,
+            source: 'razorpay_webhook',
+            eventType: 'invoice_overdue',
+            amountPaise,
+            currency: invoice?.currency || 'INR',
+            customerId,
+            rawPayload: body,
+          }
+        });
+      }
+    }
+  } else if (eventName === 'payment.captured' || eventName === 'payment.authorized' || eventName === 'invoice.paid' || eventName === 'subscription.charged') {
+    const payment = payload.payment?.entity || payload.invoice?.entity || payload.subscription?.entity;
+    const externalCustomerId = payment?.customer_id;
+    const amountPaise = payment?.amount || 0;
     
     // Idempotency check using externalEventId
     if (eventId) {
@@ -165,7 +284,7 @@ razorpayWebhook.post('/', async (c) => {
           externalEventId: eventId,
           eventType: 'payment_captured',
           amountPaise,
-          currency: payment.currency,
+          currency: payment?.currency || 'INR',
           rawPayload: body,
           occurredAt: new Date(),
         }).onConflictDoNothing({ target: riskEvents.externalEventId });
@@ -179,7 +298,7 @@ razorpayWebhook.post('/', async (c) => {
         if (openCase && openCase.status !== 'recovered' && !openCase.status.startsWith('stopped')) {
           // Update DB
           await db.update(cases)
-            .set({ status: 'recovered', amountRecoveredPaise: payment.amount, closedAt: new Date() })
+            .set({ status: 'recovered', amountRecoveredPaise: amountPaise, closedAt: new Date() })
             .where(eq(cases.id, openCase.id));
 
           // Emit recovery for Bandit updates

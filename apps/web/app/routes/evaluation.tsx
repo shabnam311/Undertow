@@ -36,11 +36,19 @@ function EvaluationComponent() {
 
       <div className="kpi-row">
         <div className="kpi-card">
-          <div className="kpi-label">Recovery Rate</div>
-          <div className="kpi-val">{data.recoveryRate}%</div>
+          <div className="kpi-label">Undertow Recovery Rate</div>
+          <div className="kpi-val brass">{data.recoveryRate}%</div>
         </div>
         <div className="kpi-card">
-          <div className="kpi-label">Cost of Interventions</div>
+          <div className="kpi-label">Baseline Recovery Rate</div>
+          <div className="kpi-val dim">{data.naiveBaselineRecoveryRate}%</div>
+        </div>
+        <div className="kpi-card">
+          <div className="kpi-label">Recovery Uplift</div>
+          <div className="kpi-val brass">+{(data.recoveryRate - data.naiveBaselineRecoveryRate)}%</div>
+        </div>
+        <div className="kpi-card">
+          <div className="kpi-label">Total Recovery Cost</div>
           <div className="kpi-val">₹{(data.totalCostPaise / 100).toFixed(2)}</div>
         </div>
       </div>
