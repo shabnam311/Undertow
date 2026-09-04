@@ -7,7 +7,9 @@
     "push": "drizzle-kit push"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "drizzle-orm": "^0.45.2",
+    "inngest": "^4.19.0",
     "postgres": "^3.4.4"
   },
   "devDependencies": {
