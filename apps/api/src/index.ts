@@ -89,7 +89,13 @@ app.use(
 
 const port = Number(process.env.PORT) || 3001;
 
-console.log(`Undertow API server starting on port ${port}...`);
+console.log(`Undertow API server listening on 0.0.0.0:${port}`);
+
+Bun.serve({
+  port,
+  hostname: '0.0.0.0',
+  fetch: app.fetch,
+});
 
 export default {
   port,

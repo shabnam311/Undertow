@@ -1,4 +1,4 @@
-FROM oven/bun:1.1.20-alpine
+FROM oven/bun:1.1
 WORKDIR /app
 
 # Copy all workspace manifests first
@@ -7,7 +7,7 @@ COPY packages/db/package.json ./packages/db/
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
 
-# Install dependencies across all workspaces
+# Install all dependencies
 RUN bun install
 
 # Copy source code
