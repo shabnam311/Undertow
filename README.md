@@ -1,10 +1,10 @@
-# Undertow — Recovery Operating System for Merchant Revenue Leakage
+﻿# Undertow — Recovery Operating System for Merchant Revenue Leakage
 **Razorpay AI Buildathon 2026 — Track 03: AI Revenue Recovery**
 
-> **🌐 Live Demo (Instant Access, No Login Required):** [https://undertow.vercel.app](https://undertow.vercel.app)  
-> **🩺 System Health & Service Readiness:** [https://undertow.vercel.app/status](http://localhost:3001/health)
+> **🌐 Live Demo (Instant Access, 1-Click Role Presets):** [Undertow](https://undertow-web-flax.vercel.app/)  
+> **🩺 Production API & Service Readiness:** [https://undertow-production-c0b8.up.railway.app/health](https://undertow-production-c0b8.up.railway.app/health)
 
-Undertow is an autonomous, bounded, and fully auditable revenue recovery engine. It watches a merchant's payment and billing surface for active revenue leakage (failed payments, abandoned checkouts, overdue B2B invoices, and failing UPI autopay mandates), diagnoses the root cause using an LLM with vector similarity few-shot context, and recovers capital using an online Thompson-Sampling Contextual Bandit bounded by strict spend ceilings, escalation ladders, and regulatory guardrails (NPCI Circular No. 34 & RBI ₹15,000 AFA Rule).
+Undertow is an autonomous, bounded, and fully auditable revenue recovery engine. It watches a merchant''s payment and billing surface for active revenue leakage (failed payments, abandoned checkouts, overdue B2B invoices, and failing UPI autopay mandates), diagnoses the root cause using an LLM with vector similarity few-shot context, and recovers capital using an online Thompson-Sampling Contextual Bandit bounded by strict spend ceilings, escalation ladders, and regulatory guardrails (NPCI Circular No. 34 & RBI ₹15,000 AFA Rule).
 
 ---
 
