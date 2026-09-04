@@ -329,7 +329,7 @@ export const appRouter = t.router({
         }
 
         const role = input.role || (input.email.includes('owner') ? 'owner' : input.email.includes('viewer') ? 'viewer' : 'analyst');
-        const name = input.email.includes('shabnam') ? 'Shabnam Ansari' : 'Recovery Operator';
+        const name = input.email.includes('shabnam') ? 'Shabnam' : 'Recovery Operator';
         
         // Construct structured session token
         const tokenPayload = {

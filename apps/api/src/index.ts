@@ -82,7 +82,7 @@ app.use(
               role: decoded.role || 'analyst',
               merchantId: merchantId || decoded.merchantId || 'no-merchant',
               email: decoded.email || 'analyst@undertow.demo',
-              name: decoded.name || 'Shabnam Ansari',
+              name: decoded.name || 'Shabnam',
               merchantName: merchantName || decoded.merchantName || 'Meridian Textiles',
             }
           };
@@ -97,7 +97,7 @@ app.use(
           role: 'analyst' as const,
           merchantId: merchantId || 'no-merchant',
           email: 'analyst@undertow.demo',
-          name: 'Shabnam Ansari',
+          name: 'Shabnam',
           merchantName: merchantName || 'Meridian Textiles',
         },
       };

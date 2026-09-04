@@ -22,7 +22,6 @@ function RootComponent() {
       const isAuthPage = location.pathname === '/login';
 
       if (!token && !isAuthPage) {
-        // Not logged in -> Redirect directly to login page
         navigate({ to: '/login' });
       } else if (stored) {
         setUser(JSON.parse(stored));
@@ -48,16 +47,13 @@ function RootComponent() {
   }
 
   const currentUser = user || {
-    name: 'Shabnam Ansari',
+    name: 'Shabnam',
     email: 'analyst@undertow.demo',
     role: 'owner',
     merchantName: 'Meridian Textiles'
   };
 
-  const initials = (currentUser.name || 'SA')
-    .split(' ')
-    .map(w => w[0])
-    .join('')
+  const initials = (currentUser.name || 'S')
     .slice(0, 2)
     .toUpperCase();
 
@@ -67,8 +63,8 @@ function RootComponent() {
         <div className="brand">
           <div className="brand-mark">
             <svg viewBox="0 0 24 24" fill="none">
-              <path d="M2 12c2 0 2-3 4-3s2 3 4 3 2-3 4-3 2 3 4 3 2-3 4-3" stroke="#1FD8B0" strokeWidth="2" strokeLinecap="round" />
-              <path d="M2 17c2 0 2-3 4-3s2 3 4 3 2-3 4-3 2 3 4 3 2-3 4-3" stroke="#1FD8B0" strokeWidth="2" strokeLinecap="round" opacity="0.4" />
+              <path d="M2 12c2 0 2-3 4-3s2 3 4 3 2-3 4-3" stroke="#1FD8B0" strokeWidth="2" strokeLinecap="round" />
+              <path d="M2 17c2 0 2-3 4-3s2 3 4 3 2-3 4-3" stroke="#1FD8B0" strokeWidth="2" strokeLinecap="round" opacity="0.4" />
             </svg>
           </div>
           <div>

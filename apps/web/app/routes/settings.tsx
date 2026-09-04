@@ -1,4 +1,4 @@
-import { createRoute } from '@tanstack/react-router';
+ï»¿import { createRoute } from '@tanstack/react-router';
 import { Route as rootRoute } from './__root';
 import { useState } from 'react';
 
@@ -21,9 +21,9 @@ export function SettingsComponent() {
   const storedUser = (() => {
     try {
       const u = localStorage.getItem('undertow_user');
-      return u ? JSON.parse(u) : { name: 'Shabnam Ansari', email: 'analyst@undertow.demo', role: 'owner', merchantName: 'Meridian Textiles' };
+      return u ? JSON.parse(u) : { name: 'Shabnam', email: 'analyst@undertow.demo', role: 'owner', merchantName: 'Meridian Textiles' };
     } catch {
-      return { name: 'Shabnam Ansari', email: 'analyst@undertow.demo', role: 'owner', merchantName: 'Meridian Textiles' };
+      return { name: 'Shabnam', email: 'analyst@undertow.demo', role: 'owner', merchantName: 'Meridian Textiles' };
     }
   })();
 
@@ -50,7 +50,7 @@ export function SettingsComponent() {
           {activeTab === 'profile' && (
             <div className="settings-panel">
               <h4>Personal profile</h4>
-              <div className="desc">{storedUser.role?.toUpperCase()} · {storedUser.email} · {storedUser.merchantName}</div>
+              <div className="desc">{storedUser.role?.toUpperCase()} Â· {storedUser.email} Â· {storedUser.merchantName}</div>
               <div className="field"><label>Full name</label><input defaultValue={storedUser.name} /></div>
               <div className="field"><label>Email</label><input defaultValue={storedUser.email} /></div>
               <div className="field"><label>Role</label><input disabled value={storedUser.role} /></div>
@@ -68,7 +68,7 @@ export function SettingsComponent() {
                 <div className="range-wrap">
                   <input type="range" min="1000" max="50000" value={spendCeil} onChange={(e) => setSpendCeil(Number(e.target.value))} />
                   <div style={{ marginTop: '8px' }}>
-                    Current: <span className="range-val">?{spendCeil.toLocaleString('en-IN')}</span> / day
+                    Current: <span className="range-val">â‚¹{spendCeil.toLocaleString('en-IN')}</span> / day
                   </div>
                 </div>
               </div>
@@ -76,15 +76,15 @@ export function SettingsComponent() {
                 <h4>Escalation Ladder</h4>
                 <div className="desc">Tier thresholds before an autonomous case escalates to human review.</div>
                 <div className="toggle-row">
-                  <div><div className="name">Tier 0 ? 1</div><div className="meta">After 1 failed nudge</div></div>
+                  <div><div className="name">Tier 0 â†’ 1</div><div className="meta">After 1 failed nudge</div></div>
                   <span className="badge tech">Auto</span>
                 </div>
                 <div className="toggle-row">
-                  <div><div className="name">Tier 1 ? 2</div><div className="meta">After 3 failed nudges (NPCI Cap)</div></div>
+                  <div><div className="name">Tier 1 â†’ 2</div><div className="meta">After 3 failed nudges (NPCI Cap)</div></div>
                   <span className="badge tech">Auto</span>
                 </div>
                 <div className="toggle-row">
-                  <div><div className="name">Tier 2 ? 3</div><div className="meta">Human analyst review required</div></div>
+                  <div><div className="name">Tier 2 â†’ 3</div><div className="meta">Human analyst review required</div></div>
                   <span className="badge card">Manual</span>
                 </div>
               </div>
@@ -96,11 +96,11 @@ export function SettingsComponent() {
               <h4>Channel Preferences</h4>
               <div className="desc">Toggle which channels the Thompson-sampling bandit is allowed to select.</div>
               <div className="toggle-row">
-                <div><div className="name">Email</div><div className="meta">via Resend · Live</div></div>
+                <div><div className="name">Email</div><div className="meta">via Resend Â· Live</div></div>
                 <label className="switch"><input type="checkbox" defaultChecked /><span className="slider-tg"></span></label>
               </div>
               <div className="toggle-row">
-                <div><div className="name">WhatsApp</div><div className="meta">via Gupshup sandbox · Live</div></div>
+                <div><div className="name">WhatsApp</div><div className="meta">via Gupshup sandbox Â· Live</div></div>
                 <label className="switch"><input type="checkbox" defaultChecked /><span className="slider-tg"></span></label>
               </div>
               <div className="toggle-row">
@@ -108,7 +108,7 @@ export function SettingsComponent() {
                 <label className="switch"><input type="checkbox" defaultChecked /><span className="slider-tg"></span></label>
               </div>
               <div className="toggle-row">
-                <div><div className="name">Payment Link Retry (RBI AFA)</div><div className="meta">Enforced automatically for ?15,000+ mandates</div></div>
+                <div><div className="name">Payment Link Retry (RBI AFA)</div><div className="meta">Enforced automatically for â‚¹15,000+ mandates</div></div>
                 <label className="switch"><input type="checkbox" defaultChecked disabled /><span className="slider-tg"></span></label>
               </div>
             </div>
@@ -118,7 +118,7 @@ export function SettingsComponent() {
             <div className="settings-panel">
               <h4>Team Members</h4>
               <div className="toggle-row">
-                <div><div className="name">Shabnam Ansari</div><div className="meta">analyst@undertow.demo</div></div>
+                <div><div className="name">Shabnam</div><div className="meta">analyst@undertow.demo</div></div>
                 <span className="badge tech">Owner</span>
               </div>
               <div className="toggle-row">
@@ -139,9 +139,9 @@ export function SettingsComponent() {
             <div className="settings-panel">
               <h4>API & Provider Keys</h4>
               <div className="desc">Provider keys are securely managed server-side.</div>
-              <div className="field"><label>Groq LPU (Primary Diagnostician)</label><div className="keyfield">gsk_••••••••••••4f2a <button onClick={() => showToast('Masked key')}>Copy</button></div></div>
-              <div className="field"><label>Anthropic Haiku (Resilient Fallback)</label><div className="keyfield">sk-ant-••••••••••88bd <button onClick={() => showToast('Masked key')}>Copy</button></div></div>
-              <div className="field"><label>Razorpay Webhook Secret</label><div className="keyfield">••••••••••••••••3f9c <button onClick={() => showToast('Masked key')}>Copy</button></div></div>
+              <div className="field"><label>Groq LPU (Primary Diagnostician)</label><div className="keyfield">gsk_â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢4f2a <button onClick={() => showToast('Masked key')}>Copy</button></div></div>
+              <div className="field"><label>Anthropic Haiku (Resilient Fallback)</label><div className="keyfield">sk-ant-â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢88bd <button onClick={() => showToast('Masked key')}>Copy</button></div></div>
+              <div className="field"><label>Razorpay Webhook Secret</label><div className="keyfield">â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢3f9c <button onClick={() => showToast('Masked key')}>Copy</button></div></div>
             </div>
           )}
 

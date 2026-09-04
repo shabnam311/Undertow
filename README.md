@@ -155,5 +155,5 @@ bun test
 ---
 
 ## 👥 Authors & Team
-- **Shabnam Ansari** &mdash; *Undertow Architecture & Engineering*
+- **Shabnam** &mdash; *Undertow Architecture & Engineering*
 - **License**: MIT

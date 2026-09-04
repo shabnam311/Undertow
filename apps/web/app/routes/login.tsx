@@ -14,7 +14,7 @@ export function LoginComponent() {
   const [tab, setTab] = useState<'login' | 'signup' | 'forgot' | 'otp'>('login');
   const [email, setEmail] = useState('analyst@undertow.demo');
   const [password, setPassword] = useState('demopass123');
-  const [name, setName] = useState('Shabnam Ansari');
+  const [name, setName] = useState('Shabnam');
   const [role, setRole] = useState<'owner' | 'analyst' | 'viewer'>('analyst');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,7 +41,7 @@ export function LoginComponent() {
       window.location.href = '/';
     },
     onError: (err) => {
-      const userName = email.includes('shabnam') ? 'Shabnam Ansari' : 'Recovery Operator';
+      const userName = email.includes('shabnam') ? 'Shabnam' : 'Recovery Operator';
       performClientAuth(role, email, userName);
     }
   });
@@ -73,7 +73,7 @@ export function LoginComponent() {
 
   const handleQuickDemo = (demoRole: 'owner' | 'analyst' | 'viewer') => {
     const demoEmail = `${demoRole}@undertow.demo`;
-    const demoName = demoRole === 'owner' ? 'Shabnam Ansari' : demoRole === 'analyst' ? 'Demo Analyst' : 'Evaluator (Viewer)';
+    const demoName = demoRole === 'owner' ? 'Shabnam' : demoRole === 'analyst' ? 'Demo Analyst' : 'Evaluator (Viewer)';
     setIsSubmitting(true);
     performClientAuth(demoRole, demoEmail, demoName);
   };
@@ -197,7 +197,7 @@ export function LoginComponent() {
 
               <div className="field">
                 <label>Full name</label>
-                <input type="text" required value={name} onChange={e => setName(e.target.value)} placeholder="Shabnam Ansari" />
+                <input type="text" required value={name} onChange={e => setName(e.target.value)} placeholder="Shabnam" />
               </div>
               <div className="field">
                 <label>Work email</label>
