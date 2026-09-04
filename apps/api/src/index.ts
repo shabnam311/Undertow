@@ -49,26 +49,56 @@ app.use(
                          (c?.req?.header && c.req.header('Authorization')) || 
                          'Bearer demo-secret-key';
                          
-      if (authHeader !== 'Bearer demo-secret-key') {
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return { user: null };
       }
+
+      const token = authHeader.replace('Bearer ', '').trim();
 
       // Fetch the merchant that owns the latest seeded cases dynamically
       const latestCase = await db.query.cases.findFirst({
         orderBy: (cases, { desc }) => [desc(cases.openedAt)]
       });
       let merchantId = latestCase?.merchantId;
+      let merchantName = 'Meridian Textiles';
       
-      if (!merchantId) {
-        const merchantList = await db.select({ id: merchants.id }).from(merchants).limit(1);
-        merchantId = merchantList.length > 0 ? merchantList[0].id : 'no-merchant';
+      if (merchantId) {
+        const m = await db.query.merchants.findFirst({ where: eq(merchants.id, merchantId) });
+        if (m?.name) merchantName = m.name;
+      } else {
+        const merchantList = await db.select({ id: merchants.id, name: merchants.name }).from(merchants).limit(1);
+        if (merchantList.length > 0) {
+          merchantId = merchantList[0].id;
+          merchantName = merchantList[0].name;
+        }
+      }
+
+      if (token.startsWith('demo_')) {
+        try {
+          const decoded = JSON.parse(Buffer.from(token.replace('demo_', ''), 'base64').toString('utf8'));
+          return {
+            user: {
+              id: decoded.userId || 'user-1',
+              role: decoded.role || 'analyst',
+              merchantId: merchantId || decoded.merchantId || 'no-merchant',
+              email: decoded.email || 'analyst@undertow.demo',
+              name: decoded.name || 'Shabnam Ansari',
+              merchantName: merchantName || decoded.merchantName || 'Meridian Textiles',
+            }
+          };
+        } catch (e) {
+          // fallback to standard demo session
+        }
       }
 
       return {
         user: {
           id: 'user-1',
-          role: 'analyst' as const, // matching UI
+          role: 'analyst' as const,
           merchantId: merchantId || 'no-merchant',
+          email: 'analyst@undertow.demo',
+          name: 'Shabnam Ansari',
+          merchantName: merchantName || 'Meridian Textiles',
         },
       };
     },
