@@ -9,9 +9,16 @@ mock.module('@undertow/db', () => {
         channelPerformance: {
           findMany: findManyMock
         }
-      }
+      },
+      execute: mock(async () => []),
+      update: mock(() => ({
+        set: mock(() => ({
+          where: mock(async () => {})
+        }))
+      }))
     },
-    channelPerformance: {}
+    channelPerformance: {},
+    cases: {}
   };
 });
 

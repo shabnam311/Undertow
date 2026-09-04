@@ -1,0 +1,2 @@
+ALTER TABLE "channel_performance" ALTER COLUMN "root_cause" SET NOT NULL;--> statement-breakpoint
+ALTER TABLE "channel_performance" ADD CONSTRAINT "channel_performance_unq" UNIQUE("merchant_id","channel","tier","root_cause");

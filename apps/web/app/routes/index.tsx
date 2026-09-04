@@ -125,7 +125,9 @@ function QueueView() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <h1>Recovery queue</h1>
-            <span className="stamp diagnosing" style={{ marginTop: '4px' }}>SHADOW MODE</span>
+            <span className="stamp diagnosing" style={{ marginTop: '4px' }}>
+              {kpisQuery.data?.isShadowMode !== false ? 'SHADOW MODE' : 'LIVE DISPATCH'}
+            </span>
           </div>
           <p>Live cases currently held by the agent, sorted by time in current tier.</p>
         </div>
@@ -160,7 +162,9 @@ function QueueView() {
       <div className="tideline-wrap">
         <div className="tideline-head">
           <span className="t1">Aggregate flow, 14 day window</span>
-          <span className="t2 mono">+₹41,900 in the last hour</span>
+          <span className="t2 mono">
+            {kpisQuery.data?.recoveredAmountPaise ? `₹${(kpisQuery.data.recoveredAmountPaise / 100).toLocaleString()} recovered to date` : 'No recoveries yet'}
+          </span>
         </div>
         <canvas id="tideline" ref={canvasRef} style={{ display: 'block', width: '100%', height: '56px' }}></canvas>
       </div>
@@ -182,7 +186,9 @@ function QueueView() {
             <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--color-text-3)' }}>
               <p>Nothing at risk right now</p>
               <p style={{ fontSize: '11px', marginTop: '8px' }}>
-                Last case closed {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {kpisQuery.data?.lastClosedAt 
+                  ? `Last case closed at ${new Date(kpisQuery.data.lastClosedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                  : 'No cases closed yet'}
               </p>
             </div>
           ) : (

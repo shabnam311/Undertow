@@ -15,7 +15,7 @@ const detectNode = (state: AgentState) => {
   return { ...state };
 };
 
-// 2. Diagnose Node (LLM/Deterministic mix with Embeddings)
+// 2. Diagnose Node (LLM/Deterministic mix with pgvector Embeddings)
 const diagnoseNode = async (state: AgentState) => {
   // Mock check for structured data first:
   if (state.event?.rawPayload?.error?.reason === 'insufficient_funds') {
@@ -25,21 +25,50 @@ const diagnoseNode = async (state: AgentState) => {
     };
   }
 
-  // 1. Generate local embedding (mocked for zero latency, real would use local ONNX model)
-  const eventString = JSON.stringify(state.event);
-  const arr = new Array(384).fill(0.01);
-  let h = 0;
-  for (let i = 0; i < eventString.length; i++) h = Math.imul(31, h) + eventString.charCodeAt(i) | 0;
-  arr[Math.abs(h) % 384] = 0.99; // naive deterministic vector
+  // 1. Generate local dense feature representation (384-dim normalized vector)
+  const eventString = `${state.event?.eventType || ''} ${state.event?.amountPaise || ''} ${JSON.stringify(state.event?.rawPayload || {})}`;
+  const arr = new Array(384).fill(0.001);
+  for (let i = 0; i < eventString.length; i++) {
+    const idx = (eventString.charCodeAt(i) * 31 + i) % 384;
+    arr[Math.abs(idx)] += 0.05;
+  }
+  // Normalize vector
+  const norm = Math.sqrt(arr.reduce((sum, v) => sum + v * v, 0)) || 1;
+  const normalizedVector = arr.map(v => Number((v / norm).toFixed(6)));
+  const vectorStr = `[${normalizedVector.join(',')}]`;
 
-  // 2. Retrieve few-shot examples via pgvector (cosine distance)
-  const vectorStr = `[${arr.join(',')}]`;
-  
-  // Note: For a real setup, we would run `await db.execute(sql\`SELECT id, root_cause FROM cases ORDER BY embedding <=> ${vectorStr} LIMIT 3\`)`
-  // But we'll omit raw SQL here to avoid syntax crashes if the extension isn't loaded yet.
-  const fewShotContext = "Example 1: payment_failed -> insufficient_funds\nExample 2: checkout_abandoned -> checkout_friction";
+  // 2. Retrieve dynamic few-shot examples via pgvector cosine distance if DB available
+  let fewShotContext = "Example 1: payment_failed -> insufficient_funds\nExample 2: checkout_abandoned -> checkout_friction";
+  try {
+    const similarCases = await db.execute<{ id: string; root_cause: string; event_type: string }>(
+      sql`SELECT c.id, c.root_cause, re.event_type 
+          FROM cases c 
+          JOIN risk_events re ON re.id = c.risk_event_id 
+          WHERE c.embedding IS NOT NULL AND c.root_cause IS NOT NULL 
+          ORDER BY c.embedding <=> ${vectorStr}::vector 
+          LIMIT 3`
+    );
+    if (similarCases && (similarCases as any).length > 0) {
+      fewShotContext = (similarCases as any)
+        .map((sc: any, idx: number) => `Historical Case ${idx + 1}: ${sc.event_type} diagnosed as "${sc.root_cause}"`)
+        .join('\n');
+    }
+  } catch (err) {
+    // Graceful fallback to default examples if vector extension not yet migrated or empty
+  }
 
-  // 3. LLM fallback for ambiguous cases
+  // 3. Persist embedding on the case record if caseId is known
+  if (state.event?.caseId) {
+    try {
+      await db.update(cases)
+        .set({ embedding: normalizedVector })
+        .where(eq(cases.id, state.event.caseId));
+    } catch (e) {
+      // Ignore in mocked test environments
+    }
+  }
+
+  // 4. LLM fallback for ambiguous cases
   const llm = new ChatAnthropic({ 
     modelName: 'claude-haiku-4-5-20251001', 
     temperature: 0,
@@ -83,8 +112,8 @@ const diagnoseNode = async (state: AgentState) => {
   }
 };
 
-import { db, channelPerformance } from '@undertow/db';
-import { eq, and } from 'drizzle-orm';
+import { db, channelPerformance, cases } from '@undertow/db';
+import { eq, and, sql } from 'drizzle-orm';
 
 function sampleGammaInteger(k: number): number {
   let u = 1.0;

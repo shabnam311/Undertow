@@ -58,8 +58,8 @@ export async function runSeed() {
         }
       }
 
-      // Guardrail: Disputed cannot be recovered or escalated
-      if (rootCause === 'disputed_or_service_issue') {
+      // Guardrail: Disputed and voluntary cancellation cannot be recovered or escalated
+      if (rootCause === 'disputed_or_service_issue' || rootCause === 'voluntary_cancellation_signal') {
         status = 'stopped_unrecovered'; 
       } else {
         status = sample(['detected', 'diagnosing', 'intervention_sent', 'escalated', 'recovered']);

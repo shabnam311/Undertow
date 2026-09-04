@@ -58,9 +58,14 @@ export const appRouter = t.router({
         }
       }
 
-      const costPerRecoveredRupee = recoveredAmount > 0 
-        ? (totalCost / 100) / (recoveredAmount / 100) 
-        : 0;
+      // Find latest closed case for real empty-state and summary timestamps
+      const latestClosed = await db.query.cases.findFirst({
+        where: and(
+          eq(cases.merchantId, ctx.user.merchantId),
+          sql`${cases.closedAt} IS NOT NULL`
+        ),
+        orderBy: (cases, { desc }) => [desc(cases.closedAt)]
+      });
 
       return {
         recoveredAmountPaise: recoveredAmount,
@@ -68,6 +73,8 @@ export const appRouter = t.router({
         openCasesCount,
         stoppedCount,
         costPerRecoveredRupee,
+        lastClosedAt: latestClosed?.closedAt || null,
+        isShadowMode: process.env.ENABLE_SHADOW_MODE !== 'false',
       };
     }),
 
@@ -142,6 +149,32 @@ export const appRouter = t.router({
         const latestInv = caseRecord.interventions[0];
         const newTier = (latestInv?.tier || 1) + 1;
         const channel = latestInv?.channel || 'email';
+
+        // Fetch merchant escalation ceiling
+        const merchantRecord = await db.query.merchants.findFirst({
+          where: eq(merchants.id, ctx.user.merchantId)
+        });
+        const maxEscalation = merchantRecord?.escalationCeiling ?? 3;
+
+        if (newTier > maxEscalation) {
+          await db.update(cases)
+            .set({ status: 'stopped_unrecovered', closeReason: 'max_escalation_reached' })
+            .where(eq(cases.id, input.id));
+
+          await db.insert(stopEvents).values({
+            caseId: input.id,
+            reasonCode: 'escalation_ceiling_reached',
+            isSystemTriggered: false,
+            merchantUserId: ctx.user.id !== 'user-1' ? ctx.user.id : undefined,
+          });
+
+          await inngest.send({
+            name: 'case/closed',
+            data: { caseId: input.id, status: 'stopped_unrecovered' }
+          });
+
+          return { success: false, reason: 'max_escalation_reached' };
+        }
 
         // Escalate case status
         await db.update(cases)

@@ -138,7 +138,18 @@ razorpayWebhook.post('/', async (c) => {
   } else if (eventName === 'payment.captured' || eventName === 'payment.authorized') {
     const payment = payload.payment.entity;
     const externalCustomerId = payment.customer_id;
+    const amountPaise = payment.amount;
     
+    // Idempotency check using externalEventId
+    if (eventId) {
+      const existingEvent = await db.query.riskEvents.findFirst({
+        where: eq(riskEvents.externalEventId, eventId)
+      });
+      if (existingEvent) {
+        return c.json({ status: 'already_processed' });
+      }
+    }
+
     // Attempt to match by customer
     if (externalCustomerId) {
       const existingCustomer = await db.query.customers.findFirst({
@@ -146,12 +157,26 @@ razorpayWebhook.post('/', async (c) => {
       });
       
       if (existingCustomer) {
-        // Find open case
+        // Record risk event for audit / idempotency
+        await db.insert(riskEvents).values({
+          merchantId: merchantId,
+          customerId: existingCustomer.id,
+          source: 'razorpay_webhook',
+          externalEventId: eventId,
+          eventType: 'payment_captured',
+          amountPaise,
+          currency: payment.currency,
+          rawPayload: body,
+          occurredAt: new Date(),
+        }).onConflictDoNothing({ target: riskEvents.externalEventId });
+
+        // Find most recent open case for this customer
         const openCase = await db.query.cases.findFirst({
-          where: eq(cases.customerId, existingCustomer.id) // simplistic fallback
+          where: eq(cases.customerId, existingCustomer.id),
+          orderBy: (cases, { desc }) => [desc(cases.openedAt)]
         });
         
-        if (openCase && openCase.status !== 'recovered') {
+        if (openCase && openCase.status !== 'recovered' && !openCase.status.startsWith('stopped')) {
           // Update DB
           await db.update(cases)
             .set({ status: 'recovered', amountRecoveredPaise: payment.amount, closedAt: new Date() })
