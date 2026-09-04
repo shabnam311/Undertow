@@ -131,12 +131,32 @@ export const appRouter = t.router({
       .input(z.object({ id: z.string() }))
       .mutation(async ({ input, ctx }) => {
         const caseRecord = await db.query.cases.findFirst({
-          where: eq(cases.id, input.id)
+          where: eq(cases.id, input.id),
+          with: { interventions: { orderBy: (invs, { desc }) => [desc(invs.tier)], limit: 1 } }
         });
         
         if (!caseRecord || caseRecord.merchantId !== ctx.user.merchantId) {
           throw new Error('Case not found');
         }
+
+        const latestInv = caseRecord.interventions[0];
+        const newTier = (latestInv?.tier || 1) + 1;
+        const channel = latestInv?.channel || 'email';
+
+        // Escalate case status
+        await db.update(cases)
+          .set({ status: 'escalated' })
+          .where(eq(cases.id, input.id));
+
+        // Trigger real Inngest orchestration event
+        await inngest.send({
+          name: 'intervention/intended',
+          data: {
+            caseId: input.id,
+            channel,
+            tier: newTier,
+          }
+        });
         
         return { success: true };
       }),
@@ -153,8 +173,16 @@ export const appRouter = t.router({
         }
 
         await db.update(cases)
-          .set({ status: 'stopped_manual', updatedAt: new Date() })
+          .set({ status: 'stopped_manual' })
           .where(eq(cases.id, input.id));
+
+        // Insert manual stopEvent
+        await db.insert(stopEvents).values({
+          caseId: input.id,
+          reasonCode: 'manual_pause',
+          isSystemTriggered: false,
+          merchantUserId: ctx.user.id !== 'user-1' ? ctx.user.id : undefined, // record user if valid uuid
+        });
 
         return { success: true };
       }),
@@ -170,10 +198,12 @@ export const appRouter = t.router({
       const totalCases = allCases.length || 1;
       let recovered = 0;
       let totalRecoveredPaise = 0;
+      let totalAtRiskPaise = 0;
       let stopReasons: Record<string, number> = {};
       let totalCost = 0;
 
       for (const c of allCases) {
+        totalAtRiskPaise += c.amountAtRiskPaise;
         if (c.status === 'recovered') {
           recovered++;
           totalRecoveredPaise += (c.amountRecoveredPaise || c.amountAtRiskPaise);
@@ -193,10 +223,13 @@ export const appRouter = t.router({
       }));
 
       // Naive Baseline calculation
-      // Estimate: A naive "send 1 generic email to everyone" baseline recovers roughly 25% of cases (a low heuristic compared to dynamic), costing ₹0.15 per email.
+      // Estimate: A naive "send 1 generic email to everyone" baseline recovers roughly 25% of total at-risk value, costing ₹0.05 per email (5 paise).
       const naiveBaselineRecoveryRate = 25; 
-      const naiveBaselineCostPerRupee = totalRecoveredPaise > 0 
-        ? ((totalCases * 15) / 100) / ((totalRecoveredPaise * (naiveBaselineRecoveryRate / 100)) / 100)
+      const estimatedNaiveRecoveredPaise = totalAtRiskPaise * (naiveBaselineRecoveryRate / 100);
+      const naiveBaselineTotalCostPaise = totalCases * 5; // 5 paise per email
+      
+      const naiveBaselineCostPerRupee = estimatedNaiveRecoveredPaise > 0 
+        ? (naiveBaselineTotalCostPaise / 100) / (estimatedNaiveRecoveredPaise / 100)
         : 0;
       
       const undertowCostPerRupee = totalRecoveredPaise > 0

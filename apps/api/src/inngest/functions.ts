@@ -132,7 +132,13 @@ export const executeIntervention = inngest.createFunction(
         'payment_link_retry': 10
       };
       const costPaise = costMap[channel] || 0;
-      const totalSpentSoFar = caseRecord.interventions.reduce((sum, inv) => sum + (inv.costPaise || 0), 0);
+      
+      // Aggregate spend across all merchant cases
+      const merchantCases = await db.query.cases.findMany({
+        where: eq(cases.merchantId, merchantRecord.id),
+        with: { interventions: true }
+      });
+      const totalSpentSoFar = merchantCases.flatMap(c => c.interventions).reduce((sum, inv) => sum + (inv.costPaise || 0), 0);
       
       if (totalSpentSoFar + costPaise > merchantRecord.spendCeilingPaise) {
         console.warn('Spend ceiling reached');
@@ -231,7 +237,7 @@ export const processCaseClosed = inngest.createFunction(
       
       const caseRecord = await db.query.cases.findFirst({
         where: eq(cases.id, caseId),
-        with: { interventions: true }
+        with: { interventions: { orderBy: (invs, { desc }) => [desc(invs.tier)] } }
       });
 
       if (!caseRecord || caseRecord.interventions.length === 0) return;
@@ -239,17 +245,18 @@ export const processCaseClosed = inngest.createFunction(
       const rootCause = caseRecord.rootCause || 'undiagnosable';
       const isSuccess = status === 'recovered';
 
-      for (const inv of caseRecord.interventions) {
-        // Update the Beta distribution parameters (Thompson Sampling)
-        await db.execute(sql`
-          INSERT INTO channel_performance (merchant_id, channel, tier, root_cause, alpha, beta, updated_at)
-          VALUES (${caseRecord.merchantId}, ${inv.channel}, ${inv.tier}, ${rootCause}, ${isSuccess ? 2 : 1}, ${isSuccess ? 1 : 2}, NOW())
-          ON CONFLICT (id) DO UPDATE SET 
-            alpha = channel_performance.alpha + ${isSuccess ? 1 : 0},
-            beta = channel_performance.beta + ${isSuccess ? 0 : 1},
-            updated_at = NOW();
-        `);
-      }
+      // Only credit the most recent intervention to prevent credit-stealing
+      const latestInv = caseRecord.interventions[0];
+
+      // Update the Beta distribution parameters (Thompson Sampling)
+      await db.execute(sql`
+        INSERT INTO channel_performance (merchant_id, channel, tier, root_cause, alpha, beta, updated_at)
+        VALUES (${caseRecord.merchantId}, ${latestInv.channel}, ${latestInv.tier}, ${rootCause}, ${isSuccess ? 2 : 1}, ${isSuccess ? 1 : 2}, NOW())
+        ON CONFLICT (merchant_id, channel, tier, root_cause) DO UPDATE SET 
+          alpha = channel_performance.alpha + ${isSuccess ? 1 : 0},
+          beta = channel_performance.beta + ${isSuccess ? 0 : 1},
+          updated_at = NOW();
+      `);
     });
   }
 );

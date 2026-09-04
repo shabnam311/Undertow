@@ -126,6 +126,7 @@ razorpayWebhook.post('/', async (c) => {
       name: 'case/detected',
       data: {
         caseId: newCase.id,
+        merchantId: merchantId,
         source: 'razorpay_webhook',
         eventType: 'payment_failed',
         amountPaise,
@@ -134,6 +135,36 @@ razorpayWebhook.post('/', async (c) => {
         rawPayload: body,
       }
     });
+  } else if (eventName === 'payment.captured' || eventName === 'payment.authorized') {
+    const payment = payload.payment.entity;
+    const externalCustomerId = payment.customer_id;
+    
+    // Attempt to match by customer
+    if (externalCustomerId) {
+      const existingCustomer = await db.query.customers.findFirst({
+        where: eq(customers.externalRef, externalCustomerId)
+      });
+      
+      if (existingCustomer) {
+        // Find open case
+        const openCase = await db.query.cases.findFirst({
+          where: eq(cases.customerId, existingCustomer.id) // simplistic fallback
+        });
+        
+        if (openCase && openCase.status !== 'recovered') {
+          // Update DB
+          await db.update(cases)
+            .set({ status: 'recovered', amountRecoveredPaise: payment.amount, closedAt: new Date() })
+            .where(eq(cases.id, openCase.id));
+
+          // Emit recovery for Bandit updates
+          await inngest.send({
+            name: 'case/closed',
+            data: { caseId: openCase.id, status: 'recovered' }
+          });
+        }
+      }
+    }
   }
 
   return c.json({ status: 'ok' });

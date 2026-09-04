@@ -171,13 +171,17 @@ export const stopEventsRelations = relations(stopEvents, ({ one }) => ({
   }),
 }));
 
+import { unique } from 'drizzle-orm/pg-core';
+
 export const channelPerformance = pgTable('channel_performance', {
   id: uuid('id').defaultRandom().primaryKey(),
   merchantId: uuid('merchant_id').references(() => merchants.id).notNull(),
   channel: text('channel').notNull(),
   tier: integer('tier').notNull(),
-  rootCause: text('root_cause'), // specific root cause context
+  rootCause: text('root_cause').notNull(), // specific root cause context
   alpha: integer('alpha').notNull().default(1), // Successes (prior)
   beta: integer('beta').notNull().default(1),   // Failures (prior)
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (t) => ({
+  unq: unique('channel_performance_unq').on(t.merchantId, t.channel, t.tier, t.rootCause)
+}));

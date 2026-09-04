@@ -15,16 +15,16 @@ It does not ask "did this fail?" It asks, *"why did this fail, how much is at ri
 - **Ingestion & Validation**: Webhooks (e.g., Razorpay) are ingested securely, validated for signatures, and checked for idempotency using database-level constraints.
 - **Orchestration (Inngest)**: The recovery lifecycle (Detect, Diagnose, Decide, Act, Escalate) is managed by Inngest, ensuring that steps are durable, resumable, and auditable.
 - **Agentic Reasoning (LangGraph & Anthropic)**: 
-  - The `detect` phase evaluates deterministic risk scoring.
-  - The `diagnose` phase uses LangGraph and Claude 3.5 Haiku to translate raw JSON payloads into a controlled vocabulary of 9 root causes (e.g., `checkout_friction`, `issuer_risk_block`).
-  - The `decide` phase maps the diagnosis to a multi-tiered intervention strategy.
-- **Data Model (Drizzle + Neon Postgres)**: Strongly typed schema utilizing `pgEnum`, relations, and constraints to ensure structural integrity across Customers, Risk Events, Cases, Interventions, and Audit Trails (`agentRuns`).
+  - The `detect` phase evaluates an interpretable logistic regression scoring function.
+  - The `diagnose` phase uses LangGraph and Claude Haiku (`claude-haiku-4-5-20251001`) with vector-similarity few-shot context to classify raw events into a controlled vocabulary of 9 root causes.
+  - The `decide` phase uses a Thompson-sampling Contextual Bandit that dynamically balances exploration and exploitation across channels/tiers using live Beta distributions.
+- **Data Model (Drizzle + PostgreSQL)**: Strongly typed schema utilizing `pgEnum`, composite unique constraints, pgvector, and relations to ensure structural integrity across Customers, Risk Events, Cases, Interventions, and Audit Trails (`agentRuns`).
 - **Control Plane (React + Hono tRPC)**: A live operations dashboard displaying real-time aggregated KPIs (Amount at Risk, Recovered, Cost per Rupee) and a dynamic timeline queue of agent decisions.
 
 ## 4. Compliance & Control
 In autonomous recovery, trust is paramount. Undertow is designed with "brakes built in":
 - **Idempotency**: Strict `externalEventId` uniqueness prevents double-billing or spamming.
-- **Spend Ceilings**: Before dispatching high-touch interventions (e.g., WhatsApp), the agent checks the marginal `costPaise` against the merchant's configured budget limits.
+- **Spend Ceilings**: Before dispatching high-touch interventions (e.g., WhatsApp), the agent checks aggregate marginal `costPaise` against the merchant's configured budget limits.
 - **Escalation Ceilings**: A cron-driven `evaluateEscalation` loop safely steps up interventions (Tier 1 -> Tier 2) but automatically halts cases that breach the max threshold (`escalation_ceiling_reached`) or receive a `disputed` flag.
 - **Audit Trails**: Every LLM invocation captures exact `inputSnapshot` and `outputSnapshot` JSON blobs in the database, allowing merchants to debug exactly *why* the agent made a specific routing decision.
 
@@ -32,7 +32,7 @@ In autonomous recovery, trust is paramount. Undertow is designed with "brakes bu
 The prototype implements the full structural skeleton and reasoning logic end-to-end:
 1. **Real DB & Schemas**: Enforced with Postgres FKs, Enums, and Unique constraints.
 2. **Real API Surface**: Hono + tRPC providing deeply typed contexts and RBAC (owner vs analyst).
-3. **Real Agent Logic**: Unit-tested LangGraph matrices that handle variable input and produce deterministic channel routing.
+3. **Real Agent Logic**: LangGraph diagnosis paired with a Thompson-sampling bandit for optimal channel routing.
 4. **Real UI Synchronization**: A React dashboard powered dynamically by live Postgres queries, mapping live trend-lines and tracking the marginal cost per recovered Rupee.
 
 *Undertow pulls revenue back before it reaches the open sea of a written-off receivable.*

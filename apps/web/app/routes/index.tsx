@@ -45,7 +45,7 @@ function QueueView() {
     if (activeTab === 'All') return true;
     if (activeTab === 'Payments') return c.eventType === 'payment_failed';
     if (activeTab === 'Receivables') return c.eventType === 'invoice_overdue';
-    if (activeTab === 'Mandates') return c.eventType === 'mandate_bounced';
+    if (activeTab === 'Mandates') return c.eventType === 'mandate_failed';
     return true;
   });
   
@@ -215,7 +215,7 @@ function QueueView() {
                     onClick={() => setSelectedCaseId(c.id)}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={(e) => { if(e.key === 'Enter') setSelectedCaseId(c.id) }}
+                    onKeyDown={(e) => { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedCaseId(c.id); } }}
                   >
                     <td>
                       <div className="cust">{c.customerName}</div>
@@ -267,7 +267,7 @@ function QueueView() {
               <div className="case-amounts">
                 <div>
                   <div className="label">At risk</div>
-                  <div className="val" style={{ color: 'var(--rust)' }}>
+                  <div className="val" style={{ color: 'var(--color-rust)' }}>
                     ₹{(caseDetailQuery.data.amountAtRiskPaise / 100).toLocaleString()}
                   </div>
                 </div>

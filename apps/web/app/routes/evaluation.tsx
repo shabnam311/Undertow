@@ -1,8 +1,11 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { trpc } from '../utils/trpc';
+import { createRoute } from '@tanstack/react-router';
+import { Route as rootRoute } from './__root';
+import { trpc } from '../../src/trpc';
 import React from 'react';
 
-export const Route = createFileRoute('/evaluation')({
+export const Route = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/evaluation',
   component: EvaluationComponent,
 });
 

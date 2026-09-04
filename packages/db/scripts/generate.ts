@@ -100,6 +100,21 @@ export async function runSeed() {
         rootCause: rootCause as any,
       }).returning();
 
+      // Tell the orchestrator
+      await inngest.send({
+        name: 'case/detected',
+        data: {
+          caseId: newCase.id,
+          merchantId: merchantId,
+          source: 'synthetic_seed',
+          eventType: riskEvent.eventType,
+          amountPaise: riskEvent.amountPaise,
+          currency: 'INR',
+          customerId: customerId,
+          rawPayload: { generated: true },
+        }
+      });
+
       // 3. Insert Stop Event if applicable
       if (status === 'stopped_unrecovered') {
         await tx.insert(stopEvents).values({

@@ -7,32 +7,38 @@ Undertow is a bounded, auditable agent that watches a merchant's payment and bil
 - **Frontend**: TanStack Router + React (Vite SPA) + Tailwind v4
 - **Backend API**: Hono running on Bun, exposing tRPC routes and Razorpay Webhooks.
 - **Durable Orchestration**: Inngest for stateful event execution (Detect, Diagnose, Decide, Act, Escalate)
-- **Agent Reasoning**: LangGraph `StateGraph` + Claude 3.5 Haiku (`claude-3-5-haiku-20241022`) for diagnosis of unstructured failure events.
-- **Database**: Neon Serverless Postgres via Drizzle ORM
+- **Agent Reasoning**: LangGraph `StateGraph` + Claude Haiku (`claude-haiku-4-5-20251001`) for diagnosis of unstructured failure events.
+- **Channel Policy**: Thompson-Sampling Contextual Bandit dynamically updating Beta posteriors on recovery/failure.
+- **Database**: PostgreSQL (with pgvector extension) via Drizzle ORM
 
 ## Local Setup
 
-To run Undertow locally, ensure you have [Bun](https://bun.sh) installed.
+To run Undertow locally, ensure you have [Bun](https://bun.sh) and [Docker](https://www.docker.com) installed.
 
 1. Install dependencies:
    ```bash
    bun install
    ```
 
-2. Configure environment:
+2. Start the local database (pgvector):
+   ```bash
+   docker-compose up -d
+   ```
+
+3. Configure environment:
    Copy `.env.example` to `.env` and fill in the required values:
-   - `DATABASE_URL`: Your Neon Postgres connection string
+   - `DATABASE_URL`: `postgresql://postgres:password@localhost:5432/undertow`
    - `ANTHROPIC_API_KEY`: Required for the LLM diagnosis node
    - `RAZORPAY_WEBHOOK_SECRET`: Required to verify incoming webhooks
    - `INNGEST_EVENT_KEY`: For local Inngest execution
 
-3. Push Database Schema:
+4. Apply Database Schema:
    ```bash
    cd packages/db
-   bun run push
+   bun run drizzle-kit push --force
    ```
 
-4. Run the Dev Server:
+5. Run the Dev Server:
    ```bash
    # Starts both the Hono API and Vite Frontend concurrently
    bun run dev
@@ -41,7 +47,7 @@ To run Undertow locally, ensure you have [Bun](https://bun.sh) installed.
 ## Current Status: What is real vs stubbed?
 
 This prototype implements the full structural skeleton of the system:
-- **Real (Verified)**: Database schemas (with all strict enums and foreign-key constraints enforced by Postgres), Webhook signature verification & idempotency, Inngest orchestration loops with agentRuns audit trails, deterministic channel routing policies, exact spend and escalation ceilings, LangGraph StateGraph flow, tRPC transport layer, React UI components, Dynamic KPIs tracking live DB data, Synthetic Evaluation Data Generator.
+- **Implemented**: Database schemas (with all strict enums and foreign-key constraints enforced by Postgres), Webhook signature verification & idempotency, Inngest orchestration loops with agentRuns audit trails, Thompson-sampling contextual bandit channel decisions, aggregate spend and escalation ceilings, LangGraph StateGraph flow, tRPC transport layer, React UI components, Dynamic KPIs tracking live DB data, Synthetic Evaluation Data Generator.
 - **Stubbed**: 
   - `apps/web` is currently a single-page Vite app rather than a full TanStack Start SSR Nitro build.
   - Authentication (WorkOS) is completely stubbed out. The tRPC layer has basic role checks but no real session context.

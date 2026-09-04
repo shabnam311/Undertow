@@ -1,36 +1,72 @@
-import { describe, it, expect } from 'bun:test';
+import { describe, it, expect, mock, beforeEach } from 'bun:test';
+
+const findManyMock = mock(async () => []);
+
+mock.module('@undertow/db', () => {
+  return {
+    db: {
+      query: {
+        channelPerformance: {
+          findMany: findManyMock
+        }
+      }
+    },
+    channelPerformance: {}
+  };
+});
+
 import { decideNode } from './workflow';
 
-describe('decideNode', () => {
-  it('routes insufficient_funds to payment_link_retry', () => {
-    const result = decideNode({
-      event: { rawPayload: {} },
-      diagnosis: { rootCause: 'insufficient_funds', confidence: 90 }
-    });
-    expect(result.decision).toEqual({ channel: 'payment_link_retry', tier: 1 });
+describe('decideNode (Contextual Bandit)', () => {
+  beforeEach(() => {
+    findManyMock.mockClear();
+    findManyMock.mockImplementation(async () => []);
   });
 
-  it('routes checkout_friction to whatsapp tier 2', () => {
-    const result = decideNode({
-      event: { rawPayload: {} },
-      diagnosis: { rootCause: 'checkout_friction', confidence: 95 }
-    });
-    expect(result.decision).toEqual({ channel: 'whatsapp', tier: 2 });
-  });
-
-  it('routes disputed_or_service_issue to none tier 0', () => {
-    const result = decideNode({
+  it('routes disputed_or_service_issue to none tier 0 deterministically', async () => {
+    const result = await decideNode({
       event: { rawPayload: {} },
       diagnosis: { rootCause: 'disputed_or_service_issue', confidence: 99 }
     });
     expect(result.decision).toEqual({ channel: 'none', tier: 0 });
+    expect(findManyMock).not.toHaveBeenCalled();
   });
 
-  it('routes unknown root causes to email tier 1 by default', () => {
-    const result = decideNode({
+  it('routes voluntary_cancellation_signal to none tier 0 deterministically', async () => {
+    const result = await decideNode({
       event: { rawPayload: {} },
-      diagnosis: { rootCause: 'some_unknown_issue' as any, confidence: 50 }
+      diagnosis: { rootCause: 'voluntary_cancellation_signal', confidence: 99 }
     });
-    expect(result.decision).toEqual({ channel: 'email', tier: 1 });
+    expect(result.decision).toEqual({ channel: 'none', tier: 0 });
+    expect(findManyMock).not.toHaveBeenCalled();
+  });
+
+  it('samples from fallback arms when no prior data exists', async () => {
+    const result = await decideNode({
+      event: { rawPayload: {} },
+      diagnosis: { rootCause: 'insufficient_funds', confidence: 90 }
+    });
+    expect(['email', 'sms', 'whatsapp', 'payment_link_retry']).toContain(result.decision!.channel);
+    expect([1, 2]).toContain(result.decision!.tier);
+  });
+
+  it('strongly prefers arms with high successes (alpha) over failures (beta)', async () => {
+    // Provide a heavily biased set of arms
+    findManyMock.mockImplementation(async () => [
+      { channel: 'sms', tier: 2, alpha: 100, beta: 1 },
+      { channel: 'email', tier: 1, alpha: 1, beta: 100 }
+    ]);
+
+    let smsCount = 0;
+    for (let i = 0; i < 50; i++) {
+      const result = await decideNode({
+        event: { rawPayload: {} },
+        diagnosis: { rootCause: 'insufficient_funds', confidence: 90 }
+      });
+      if (result.decision?.channel === 'sms') smsCount++;
+    }
+
+    // Almost all draws should pick SMS given the extreme beta distribution difference
+    expect(smsCount).toBeGreaterThan(45);
   });
 });
