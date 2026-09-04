@@ -1,4 +1,4 @@
-import { Outlet, createRootRoute, Link, useLocation } from '@tanstack/react-router';
+ï»¿import { Outlet, createRootRoute, Link, useLocation } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import '../style.css';
 
@@ -80,11 +80,11 @@ function RootComponent() {
         <div className="rail-foot">
           Signed in as<br /><span className="who">{user.name}</span><br />
           <span style={{ fontSize: '11px', color: 'var(--muted-2)' }}>
-            {user.role ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : 'Owner'} · {user.merchantName || 'Meridian Textiles'}
+            {user.role ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : 'Owner'} Â· {user.merchantName || 'Meridian Textiles'}
           </span>
           <div className="mode-badge">
             <span className="dot"></span>
-            <span>Test Mode · Active</span>
+            <span>Test Mode Â· Active</span>
           </div>
         </div>
       </aside>
@@ -93,7 +93,7 @@ function RootComponent() {
         <div className="topbar">
           <div className="search-box">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-            <input placeholder="Search cases, customers, IDs…" />
+            <input placeholder="Search cases, customers, IDsâ€¦" />
           </div>
           <div className="topbar-right">
             <div className="avatar-menu" style={{ position: 'relative' }}>
@@ -101,20 +101,23 @@ function RootComponent() {
                 {initials}
               </button>
               {dropdownOpen && (
-                <div className="dropdown show" style={{ position: 'absolute', right: 0, top: '44px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-m)', width: '200px', padding: '6px', zIndex: 100, boxShadow: '0 12px 32px rgba(0,0,0,0.5)' }}>
+                <div className="dropdown show" style={{ position: 'absolute', right: 0, top: '44px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-m)', width: '210px', padding: '6px', zIndex: 100, boxShadow: '0 12px 32px rgba(0,0,0,0.5)' }}>
                   <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-soft)', marginBottom: '4px' }}>
                     <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--foam)' }}>{user.name}</div>
                     <div style={{ fontSize: '11px', color: 'var(--muted-2)' }}>{user.email}</div>
                   </div>
-                  <Link to="/settings" style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: 'var(--foam)', fontSize: '13px', padding: '8px 10px', borderRadius: 'var(--radius-s)' }} onClick={() => setDropdownOpen(false)}>
-                    ? Settings & Limits
+                  <Link to="/settings" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: 'var(--foam)', fontSize: '13px', padding: '8px 10px', borderRadius: 'var(--radius-s)' }} onClick={() => setDropdownOpen(false)}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                    <span>Settings & Limits</span>
                   </Link>
-                  <Link to="/login" style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: 'var(--foam)', fontSize: '13px', padding: '8px 10px', borderRadius: 'var(--radius-s)' }} onClick={() => setDropdownOpen(false)}>
-                    ?? Switch Account / Role
+                  <Link to="/login" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: 'var(--foam)', fontSize: '13px', padding: '8px 10px', borderRadius: 'var(--radius-s)' }} onClick={() => setDropdownOpen(false)}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7.5" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+                    <span>Switch Role / Login</span>
                   </Link>
                   <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '5px 0' }} />
-                  <button onClick={handleLogout} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', color: 'var(--coral)', fontSize: '13px', padding: '8px 10px', borderRadius: 'var(--radius-s)', cursor: 'pointer' }}>
-                    ? Log out
+                  <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: 'var(--coral)', fontSize: '13px', padding: '8px 10px', borderRadius: 'var(--radius-s)', cursor: 'pointer' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    <span>Log out</span>
                   </button>
                 </div>
               )}
