@@ -1,10 +1,8 @@
-FROM oven/bun:1.1
+FROM oven/bun:1.3
 WORKDIR /app
 
-# Copy all source and package definitions
 COPY . .
 
-# Install dependencies across all workspaces
 RUN bun install --production
 
 ENV NODE_ENV=production
