@@ -1,19 +1,15 @@
 FROM oven/bun:1.1
 WORKDIR /app
 
-# Copy all workspace manifests first
-COPY package.json bun.lock* ./
-COPY packages/db/package.json ./packages/db/
-COPY apps/api/package.json ./apps/api/
-COPY apps/web/package.json ./apps/web/
+# Copy all source and package definitions
+COPY . .
 
-# Install all dependencies
-RUN bun install
-
-# Copy source code
-COPY packages/db ./packages/db
-COPY apps/api ./apps/api
+# Install dependencies across all workspaces
+RUN bun install --production
 
 ENV NODE_ENV=production
+ENV PORT=3001
+
+EXPOSE 3001
 
 CMD ["bun", "run", "apps/api/src/index.ts"]

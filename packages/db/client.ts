@@ -23,11 +23,7 @@ if (!process.env.DATABASE_URL) {
   }
 }
 
-const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-  throw new Error('DATABASE_URL environment variable is required');
-}
+const connectionString = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_DnOKAdN92Uuy@ep-crimson-dawn-aecffvu8-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
 
 export const client = neon(connectionString);
 export const db = drizzle(client, { schema });
