@@ -87,7 +87,12 @@ app.use(
   })
 );
 
+const port = Number(process.env.PORT) || 3001;
+
+console.log(`Undertow API server starting on port ${port}...`);
+
 export default {
-  port: 3001,
+  port,
+  hostname: '0.0.0.0',
   fetch: app.fetch,
 };
