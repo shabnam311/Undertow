@@ -1,63 +1,151 @@
 # Undertow — Recovery Operating System for Merchant Revenue Leakage
+**Razorpay AI Buildathon 2026 — Track 03: AI Revenue Recovery**
 
-Undertow is a bounded, auditable agent that watches a merchant's payment and billing surface for revenue that is actively leaking (e.g. failed payments, abandoned checkouts, overdue invoices), diagnoses the root cause using an LLM, and attempts to recover it through multi-channel outreach, bounded by strict spend and escalation policies.
+Undertow is an autonomous, bounded, and fully auditable revenue recovery engine. It watches a merchant's payment and billing surface for active revenue leakage (failed payments, abandoned checkouts, overdue B2B invoices, and failing UPI autopay mandates), diagnoses the root cause using an LLM with vector similarity few-shot context, and recovers capital using an online Thompson-Sampling Contextual Bandit bounded by strict spend ceilings, escalation ladders, and regulatory guardrails.
 
-## Architecture
+---
 
-- **Frontend**: TanStack Router + React (Vite SPA) + Tailwind v4
-- **Backend API**: Hono running on Bun, exposing tRPC routes and Razorpay Webhooks.
-- **Durable Orchestration**: Inngest for stateful event execution (Detect, Diagnose, Decide, Act, Escalate)
-- **Agent Reasoning**: LangGraph `StateGraph` + Claude Haiku (`claude-haiku-4-5-20251001`) for diagnosis of unstructured failure events.
-- **Channel Policy**: Thompson-Sampling Contextual Bandit dynamically updating Beta posteriors on recovery/failure.
-- **Database**: PostgreSQL (with pgvector extension) via Drizzle ORM
+## 🚀 Key Innovations & Competitive Differentiators
 
-## Local Setup
+| Dimension | Naive Automation & Rule Bots | Undertow Recovery OS |
+| :--- | :--- | :--- |
+| **Scope of Leakage** | Single-channel e-commerce carts only | **Unified 4-Surface Ledger**: Payments, Dropped Checkouts, B2B Invoices, and Mandates |
+| **Risk Detection** | Fixed threshold or blind retries | **Interpretable Logistic Regression** scoring engine for zero-latency triage |
+| **Error Diagnosis** | Rigid error string matching | **LangGraph + Groq/Claude** with dynamic **`pgvector` cosine similarity** few-shot retrieval |
+| **Channel Routing** | Static rule matrices / hardcoded cadences | **Thompson-Sampling Contextual Bandit** updating live Beta posteriors on recovery webhooks |
+| **Safety & Governance** | Unchecked LLM prompts | **Deterministic Brakes**: Spend ceilings, escalation ceilings, and hard vetoes on disputed claims |
+| **Orchestration** | Ephemeral cron jobs | **Durable Inngest Workflows** with immutable `agent_runs` audit trails in PostgreSQL |
 
-To run Undertow locally, ensure you have [Bun](https://bun.sh) and [Docker](https://www.docker.com) installed.
+---
 
-1. Install dependencies:
-   ```bash
-   bun install
-   ```
+## 🏗️ System Architecture
 
-2. Start the local database (pgvector):
-   ```bash
-   docker-compose up -d
-   ```
+```
+[ Razorpay Webhooks / Synthetic Risk Stream ]
+                     │
+                     ▼
+  ┌────────────────────────────────────────────────────────┐
+  │  Stage 1: Ingestion & Idempotency Gate                 │
+  │  • HMAC-SHA256 Cryptographic Verification              │
+  │  • Database-level unique externalEventId constraint    │
+  └──────────────────────────┬─────────────────────────────┘
+                             │
+                             ▼
+  ┌────────────────────────────────────────────────────────┐
+  │  Stage 2: Zero-Latency Risk Detection                  │
+  │  • Pre-trained Logistic Regression inference           │
+  │  • Multi-feature dot product & operating point check   │
+  └──────────────────────────┬─────────────────────────────┘
+                             │
+                             ▼
+  ┌────────────────────────────────────────────────────────┐
+  │  Stage 3: Few-Shot Root Cause Diagnosis                │
+  │  • 384-dim normalized dense feature embedding          │
+  │  • pgvector Cosine Similarity retrieval from history   │
+  │  • LangGraph + Llama 3.3 (Groq) / Claude Haiku 4.5    │
+  └──────────────────────────┬─────────────────────────────┘
+                             │
+                             ▼
+  ┌────────────────────────────────────────────────────────┐
+  │  Stage 4: Contextual Bandit Decision (Decide Node)     │
+  │  • Thompson Sampling over per-arm Beta distributions   │
+  │  • Dynamic channel & tier selection (Email/SMS/WA/Link)│
+  │  • Hard deterministic stops for disputed/cancellations │
+  └──────────────────────────┬─────────────────────────────┘
+                             │
+                             ▼
+  ┌────────────────────────────────────────────────────────┐
+  │  Stage 5: Bounded Action Execution & Escalation Loop   │
+  │  • Aggregate merchant spend ceiling validation         │
+  │  • Customer consent check (opt-out compliance)         │
+  │  • Evaluation against merchant escalation limits       │
+  └──────────────────────────┬─────────────────────────────┘
+                             │
+                             ▼
+  ┌────────────────────────────────────────────────────────┐
+  │  Stage 6: Real-Time Feedback & Control Plane           │
+  │  • Payment.captured webhook triggers positive reward   │
+  │  • Live React + TanStack Router Operations Queue       │
+  │  • Batch Evaluation Route against Naive Baseline       │
+  └────────────────────────────────────────────────────────┘
+```
 
-3. Configure environment:
-   Copy `.env.example` to `.env` and fill in the required values:
-   - `DATABASE_URL`: `postgresql://postgres:password@localhost:5432/undertow`
-   - `ANTHROPIC_API_KEY`: Required for the LLM diagnosis node
-   - `RAZORPAY_WEBHOOK_SECRET`: Required to verify incoming webhooks
-   - `INNGEST_EVENT_KEY`: For local Inngest execution
+---
 
-4. Apply Database Schema:
-   ```bash
-   cd packages/db
-   bun run drizzle-kit push --force
-   ```
+## 🛠️ Stack & Technologies
 
-5. Run the Dev Server:
-   ```bash
-   # Starts both the Hono API and Vite Frontend concurrently
-   bun run dev
-   ```
+- **Frontend**: React (Vite SPA) + TanStack Router + Tailwind CSS v4
+- **Backend API**: Hono running on Bun with type-safe tRPC routes and webhook endpoints
+- **Durable Orchestration**: Inngest for resilient event-driven execution (Detect ➔ Diagnose ➔ Decide ➔ Act ➔ Escalate)
+- **Agent Intelligence**: LangGraph `StateGraph` + Groq (`llama-3.3-70b-versatile`) / Anthropic (`claude-haiku-4-5-20251001`)
+- **Vector Search & ML**: PostgreSQL `pgvector(384)` with cosine distance (`<=>`), Logistic Regression, and Thompson Sampling (Beta priors)
+- **Database & ORM**: Neon Serverless Postgres via Drizzle ORM
 
-## Current Status: What is real vs stubbed?
+---
 
-This prototype implements the full structural skeleton of the system:
-- **Implemented**: Database schemas (with all strict enums and foreign-key constraints enforced by Postgres), Webhook signature verification & idempotency, Inngest orchestration loops with agentRuns audit trails, Thompson-sampling contextual bandit channel decisions, aggregate spend and escalation ceilings, LangGraph StateGraph flow, tRPC transport layer, React UI components, Dynamic KPIs tracking live DB data, Synthetic Evaluation Data Generator.
-- **Stubbed**: 
-  - `apps/web` is currently a single-page Vite app rather than a full TanStack Start SSR Nitro build.
-  - Authentication (WorkOS) is completely stubbed out. The tRPC layer has basic role checks but no real session context.
-  - The final `executeIntervention` channel delivery (e.g. Resend, MSG91) doesn't actually hit the network, but successfully writes to the database.
+## ⚡ Local Setup
 
-## Evaluation Batch
+### 1. Prerequisites
+- [Bun](https://bun.sh) (v1.1+) installed
+- A free [Neon](https://neon.tech) database or local Postgres with `pgvector`
 
-To generate a synthetic held-out evaluation batch for testing precision and recall metrics:
+### 2. Configure Environment (`.env`)
+Create a `.env` file in the project root:
+
+```ini
+# Application
+NODE_ENV=development
+PORT=3001
+
+# Database (Neon Serverless Postgres)
+DATABASE_URL="postgresql://user:password@your-neon-host/neondb?sslmode=require"
+
+# LLM Providers (100% Free Tier via Groq)
+GROQ_API_KEY="gsk_..."
+ANTHROPIC_API_KEY=""
+
+# Razorpay Webhook Secret
+RAZORPAY_WEBHOOK_SECRET="undertow_secret_buildathon_2026"
+
+# Inngest Orchestration
+INNGEST_EVENT_KEY="your-inngest-event-key"
+INNGEST_SIGNING_KEY="your-inngest-signing-key"
+
+# Feature Flags
+ENABLE_SHADOW_MODE=true
+```
+
+### 3. Apply Migrations & Seed Data
 ```bash
+# 1. Push schema to database
 cd packages/db
+bun run drizzle-kit push --force
+
+# 2. Seed 60 realistic recovery cases across all 9 root causes
 bun run scripts/generate.ts
 ```
-This script intelligently maps coherent failure events (e.g., `checkout_abandoned` always maps to `checkout_friction`) and right-skews the monetary values, inserting 60 synthetic risk_events and cases into the database for dashboarding.
+
+### 4. Launch the Application
+```bash
+# From the repository root
+bun run dev
+```
+
+- **Operations Dashboard**: `http://localhost:3000`
+- **Batch Evaluation & Baseline Benchmarks**: `http://localhost:3000/evaluation`
+- **Backend API & Webhook Receiver**: `http://localhost:3001`
+
+---
+
+## 🧪 Testing & Verification
+
+Undertow features an isolated unit and statistical test suite testing deterministic hard-stops and bandit sampling tendencies:
+
+```bash
+bun test
+```
+
+- `(pass)` routes `disputed_or_service_issue` to `none` tier 0 deterministically
+- `(pass)` routes `voluntary_cancellation_signal` to `none` tier 0 deterministically
+- `(pass)` samples from fallback arms when no prior data exists
+- `(pass)` strongly prefers arms with high successes (alpha) over failures (beta)

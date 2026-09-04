@@ -7,7 +7,7 @@ Money that looks lost is often still moving just beneath the surface. When a pay
 ## 2. Our Solution: Undertow
 **Undertow is a bounded, auditable agent that acts as a recovery operating system for merchant revenue leakage.**
 
-Instead of blindly retrying, Undertow reads the unstructured context of a failure event, dynamically diagnoses the *root cause* using Claude 3.5 Haiku, and computes a precise recovery intervention bounded by strict merchant-defined spend ceilings and escalation ladders. 
+Instead of blindly retrying, Undertow reads the unstructured context of a failure event, dynamically diagnoses the *root cause* using LLMs (Llama 3.3 / Claude Haiku) with vector similarity context, and computes a precise recovery intervention bounded by strict merchant-defined spend ceilings and escalation ladders. 
 
 It does not ask "did this fail?" It asks, *"why did this fail, how much is at risk, and what is the most cost-efficient channel (email, SMS, WhatsApp) to pull it back?"*
 
