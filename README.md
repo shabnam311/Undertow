@@ -1,4 +1,4 @@
-﻿# Undertow — Recovery Operating System for Merchant Revenue Leakage
+# Undertow — Recovery Operating System for Merchant Revenue Leakage
 **Razorpay AI Buildathon 2026 — Track 03: AI Revenue Recovery**
 
 > **🌐 Live Demo (Instant Access, 1-Click Role Presets):** [Undertow](https://undertow-web-flax.vercel.app/)  
@@ -135,12 +135,18 @@ bun run dev
 bun test
 ```
 
-- `(pass)` routes `disputed_or_service_issue` to `none` tier 0 deterministically
-- `(pass)` routes `voluntary_cancellation_signal` to `none` tier 0 deterministically
-- `(pass)` samples from fallback arms when no prior data exists
-- `(pass)` strongly prefers arms with high successes (alpha) over failures (beta)
-- `(pass)` enforces NPCI 4-attempt cap on recurring mandates
-- `(pass)` enforces RBI ₹15,000 AFA rule by routing to payment_link_retry
+- `(pass)` Cryptographic Authentication > signs and verifies a valid session token successfully
+- `(pass)` Cryptographic Authentication > rejects tampered tokens where signature does not match payload
+- `(pass)` Cryptographic Authentication > rejects tokens signed with a different secret
+- `(pass)` Cryptographic Authentication > rejects malformed tokens without ut_ prefix or improper format
+- `(pass)` Cryptographic Authentication > rejects expired tokens
+- `(pass)` Cryptographic Authentication > correctly models RBAC permissions across owner, analyst, and viewer
+- `(pass)` Contextual Bandit > routes `disputed_or_service_issue` to `none` tier 0 deterministically
+- `(pass)` Contextual Bandit > routes `voluntary_cancellation_signal` to `none` tier 0 deterministically
+- `(pass)` Contextual Bandit > samples from fallback arms when no prior data exists
+- `(pass)` Contextual Bandit > strongly prefers arms with high successes (alpha) over failures (beta)
+- `(pass)` Contextual Bandit > enforces NPCI 4-attempt cap on recurring mandates
+- `(pass)` Contextual Bandit > enforces RBI ₹15,000 AFA rule by routing to payment_link_retry
 
 ---
 
@@ -149,8 +155,9 @@ bun test
 1. **Free-Tier Host Cold Starts**: Serverless database (Neon) and API endpoints (Railway) may experience a brief initial wake-up latency (~3-5 seconds) after prolonged idle periods. The frontend incorporates graceful loading states and resilient token handling to ensure zero UI freezes.
 2. **Multi-LLM Graceful Fallbacks**: When primary Groq LPU inference experiences rate-limiting or network timeouts, the pipeline automatically fails over to Anthropic Claude Haiku, and ultimately to deterministic heuristics so no customer payment remains undiagnosed.
 3. **Channel Delivery in Test Mode**: Real delivery is fully active for Email (Resend) and Webhook Link Retries; SMS and WhatsApp channels run in simulated test mode to prevent unsolicited messaging during evaluation.
-4. **Bandit Exploration Warm-up**: In fresh merchant environments with no priors, the Thompson Sampling algorithm starts with uniform $\text{Beta}(1, 1)$ distributions before converging to optimal channels as recovery webhooks are received.
-5. **Evaluator Authentication Mode**: In this buildathon release, role-based access control (Owner, Analyst, Viewer) is unlocked with 1-click test presets and demo authentication so evaluators can inspect permissions and trigger approvals with zero barrier to entry.
+4. **Token Storage vs CSRF Tradeoff**: Auth session tokens use signed HMAC-SHA256 bearer tokens stored in `localStorage` + `Authorization` headers. This completely eliminates CSRF vulnerabilities, but frontend state is guarded against XSS via strict input sanitization and zero dynamic `eval`/`dangerouslySetInnerHTML`.
+5. **Bandit Exploration Warm-up**: In fresh merchant environments with no priors, the Thompson Sampling algorithm starts with uniform $\text{Beta}(1, 1)$ distributions before converging to optimal channels as recovery webhooks are received.
+6. **Evaluator Authentication Mode**: In this buildathon release, role-based access control (Owner, Analyst, Viewer) is unlocked with 1-click test presets and demo authentication so evaluators can inspect permissions and trigger approvals with zero barrier to entry.
 
 ---
 

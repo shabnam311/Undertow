@@ -1,6 +1,15 @@
-﻿import { createHmac, timingSafeEqual } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 
-const AUTH_SECRET = process.env.AUTH_SECRET || process.env.RAZORPAY_WEBHOOK_SECRET || 'undertow_jwt_signing_secret_2026';
+function getAuthSecret(): string {
+  const secret = process.env.AUTH_SECRET || process.env.RAZORPAY_WEBHOOK_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('FATAL: AUTH_SECRET environment variable must be set in production!');
+    }
+    return 'undertow_dev_jwt_signing_secret_do_not_use_in_prod';
+  }
+  return secret;
+}
 
 export type SessionUser = {
   id: string;
@@ -12,17 +21,18 @@ export type SessionUser = {
   exp: number; // unix timestamp in seconds
 };
 
-export function signSessionToken(payload: Omit<SessionUser, 'exp'>): string {
+export function signSessionToken(payload: Omit<SessionUser, 'exp'>, customSecret?: string): string {
+  const secret = customSecret || getAuthSecret();
   const fullPayload: SessionUser = {
     ...payload,
     exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours expiry
   };
   const bodyBase64 = Buffer.from(JSON.stringify(fullPayload)).toString('base64url');
-  const signature = createHmac('sha256', AUTH_SECRET).update(bodyBase64).digest('base64url');
+  const signature = createHmac('sha256', secret).update(bodyBase64).digest('base64url');
   return `ut_${bodyBase64}.${signature}`;
 }
 
-export function verifySessionToken(token: string): SessionUser | null {
+export function verifySessionToken(token: string, customSecret?: string): SessionUser | null {
   if (!token || !token.startsWith('ut_')) {
     return null;
   }
@@ -33,7 +43,8 @@ export function verifySessionToken(token: string): SessionUser | null {
   }
 
   const [bodyBase64, signature] = parts;
-  const expectedSig = createHmac('sha256', AUTH_SECRET).update(bodyBase64).digest('base64url');
+  const secret = customSecret || getAuthSecret();
+  const expectedSig = createHmac('sha256', secret).update(bodyBase64).digest('base64url');
 
   if (
     signature.length !== expectedSig.length ||

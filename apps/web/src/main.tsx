@@ -23,10 +23,8 @@ function App() {
         httpBatchLink({
           url: `${apiUrl}/trpc`,
           headers: () => {
-            const token = localStorage.getItem('undertow_token') || 'demo-secret-key';
-            return {
-              'Authorization': `Bearer ${token}`
-            };
+            const token = localStorage.getItem('undertow_token');
+            return token ? { 'Authorization': `Bearer ${token}` } : {};
           }
         }),
       ],

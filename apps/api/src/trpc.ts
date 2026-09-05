@@ -305,8 +305,8 @@ export const appRouter = t.router({
     login: publicProcedure
       .input(
         z.object({
-          email: z.string().email(),
-          password: z.string().min(1),
+          email: z.string().trim().email().max(100),
+          password: z.string().min(1).max(128),
           role: z.enum(['owner', 'analyst', 'viewer']).optional(),
         })
       )
@@ -334,8 +334,8 @@ export const appRouter = t.router({
         
         // Construct structured session token and sign with HMAC-SHA256
         const tokenPayload = {
-          id: 'user-' + input.email.replace(/[^a-zA-Z0-9]/g, '-').slice(0, 15),
-          email: input.email,
+          id: 'user-' + input.email.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 20),
+          email: input.email.toLowerCase(),
           name,
           role,
           merchantId: merchantId || 'no-merchant',
@@ -353,9 +353,9 @@ export const appRouter = t.router({
     signup: publicProcedure
       .input(
         z.object({
-          name: z.string().min(1),
-          email: z.string().email(),
-          password: z.string().min(6),
+          name: z.string().trim().min(1).max(60),
+          email: z.string().trim().email().max(100),
+          password: z.string().min(6).max(128),
           role: z.enum(['owner', 'analyst', 'viewer']).default('owner'),
         })
       )
