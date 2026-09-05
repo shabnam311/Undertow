@@ -1,6 +1,6 @@
-import { createRoute, useNavigate } from '@tanstack/react-router';
+import { createRoute } from '@tanstack/react-router';
 import { Route as rootRoute } from './__root';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { trpc } from '../../src/trpc';
 
 export const Route = createRoute({
@@ -10,24 +10,33 @@ export const Route = createRoute({
 });
 
 export function LoginComponent() {
-  const navigate = useNavigate();
-  const [tab, setTab] = useState<'login' | 'signup' | 'forgot' | 'otp'>('login');
+  const [tab, setTab] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('analyst@undertow.demo');
   const [password, setPassword] = useState('demopass123');
   const [name, setName] = useState('Shabnam');
-  const [role, setRole] = useState<'owner' | 'analyst' | 'viewer'>('analyst');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: (data) => {
       localStorage.setItem('undertow_token', data.token);
       localStorage.setItem('undertow_user', JSON.stringify(data.user));
-      window.location.href = '/';
+      showToast(`Signed in as ${data.user.role}`);
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 400);
     },
     onError: (err) => {
       setIsSubmitting(false);
-      setError(err.message || 'Authentication failed. Please check your connection to the API.');
+      setError(err.message || 'Authentication failed. Please verify API status.');
     }
   });
 
@@ -35,26 +44,27 @@ export function LoginComponent() {
     onSuccess: (data) => {
       localStorage.setItem('undertow_token', data.token);
       localStorage.setItem('undertow_user', JSON.stringify(data.user));
-      window.location.href = '/';
+      showToast('Account created successfully');
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 400);
     },
     onError: (err) => {
       setIsSubmitting(false);
-      setError(err.message || 'Account creation failed. Please check your connection to the API.');
+      setError(err.message || 'Account creation failed. Please verify API status.');
     }
   });
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAuth = (mode: 'signin' | 'signup') => {
     setError(null);
     setIsSubmitting(true);
-    loginMutation.mutate({ email, password, role });
-  };
-
-  const handleSignup = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setIsSubmitting(true);
-    signupMutation.mutate({ name, email, password, role });
+    if (mode === 'signin') {
+      const role = email.includes('owner') ? 'owner' : email.includes('viewer') ? 'viewer' : 'analyst';
+      loginMutation.mutate({ email, password, role });
+    } else {
+      const role = email.includes('owner') ? 'owner' : email.includes('viewer') ? 'viewer' : 'analyst';
+      signupMutation.mutate({ name, email, password, role });
+    }
   };
 
   const handleQuickDemo = (demoRole: 'owner' | 'analyst' | 'viewer') => {
@@ -64,172 +74,232 @@ export function LoginComponent() {
     loginMutation.mutate({ email: demoEmail, password: 'demopassword', role: demoRole });
   };
 
+  // Canvas wave animation
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animFrame: number;
+    let lt = 0;
+
+    const resize = () => {
+      if (canvas) {
+        canvas.width = window.innerWidth * window.devicePixelRatio;
+        canvas.height = window.innerHeight * window.devicePixelRatio;
+      }
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const draw = () => {
+      if (!canvas || !ctx) return;
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      for (let layer = 0; layer < 3; layer++) {
+        ctx.beginPath();
+        const mid = h * (0.3 + layer * 0.22);
+        for (let x = 0; x <= w; x += 6) {
+          const y = mid + Math.sin((x * 0.003) + lt * 0.15 + layer) * h * 0.05 + Math.sin((x * 0.009) + lt * 0.08) * h * 0.02;
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = layer === 1 ? 'rgba(200, 155, 60, 0.35)' : 'rgba(60, 122, 110, 0.25)';
+        ctx.lineWidth = 1.2 * window.devicePixelRatio;
+        ctx.stroke();
+      }
+      lt += 0.01;
+      animFrame = requestAnimationFrame(draw);
+    };
+    draw();
+
+    return () => {
+      window.removeEventListener('resize', resize);
+      cancelAnimationFrame(animFrame);
+    };
+  }, []);
+
   return (
-    <div id="auth-screen">
-      <div className="auth-left">
-        <div className="brand">
-          <svg className="mark" viewBox="0 0 24 24" fill="none">
-            <path d="M2 12c2 0 2-3 4-3s2 3 4 3 2-3 4-3" stroke="#1FD8B0" strokeWidth="2" strokeLinecap="round" />
-            <path d="M2 17c2 0 2-3 4-3s2 3 4 3 2-3 4-3" stroke="#1FD8B0" strokeWidth="2" strokeLinecap="round" opacity="0.4" />
-          </svg>
-          Undertow
+    <div id="login-view">
+      <canvas id="login-canvas" ref={canvasRef} />
+      <div className="login-vignette" />
+
+      {toastMessage && (
+        <div className="toast show">
+          {toastMessage}
         </div>
-        <div className="track-tag">
-          RAZORPAY AI BUILDATHON &middot; TRACK 03 &middot; REVENUE RECOVERY
+      )}
+
+      <div className="login-card">
+        <div className="login-brand">
+          <div className="login-mark">
+            <svg viewBox="0 0 26 26" fill="none">
+              <path d="M2 16 Q 8 10, 13 16 T 24 16" stroke="#C89B3C" strokeWidth="1.6" fill="none" />
+              <path d="M2 20 Q 8 15, 13 20 T 24 20" stroke="#3C7A6E" strokeWidth="1.2" fill="none" opacity="0.7" />
+            </svg>
+          </div>
+          <h1>Undertow</h1>
+          <p>Recovery ledger &middot; sign in to continue</p>
         </div>
-        <div>
-          <h1>
-            Every calm dashboard<br />hides a <em>current</em> of<br />leaking revenue.
-          </h1>
-          <p className="pitch">
-            Undertow watches failed payments, abandoned checkouts, overdue invoices, and failing mandates &mdash; diagnoses why they leaked, and pulls the recoverable ones back, inside guardrails you set.
-          </p>
-          <div className="stat-row">
-            <div>
-              <div className="s-num">&#8377;4.8L</div>
-              <div className="s-lbl">recovered this month*</div>
-            </div>
-            <div>
-              <div className="s-num">61%</div>
-              <div className="s-lbl">recovery rate*</div>
-            </div>
-            <div>
-              <div className="s-num">9</div>
-              <div className="s-lbl">root-cause classes</div>
-            </div>
-          </div>
+
+        <div className="login-tabs">
+          <button
+            type="button"
+            className={tab === 'signin' ? 'active' : ''}
+            onClick={() => { setTab('signin'); setError(null); }}
+          >
+            Sign in
+          </button>
+          <button
+            type="button"
+            className={tab === 'signup' ? 'active' : ''}
+            onClick={() => { setTab('signup'); setError(null); }}
+          >
+            Create account
+          </button>
         </div>
-        <svg className="tide-svg" viewBox="0 0 800 220" preserveAspectRatio="none">
-          <path className="tide-path" d="M0,120 C100,80 200,160 300,120 C400,80 500,160 600,120 C700,80 800,160 900,120 L900,220 L0,220 Z" fill="#0d2a30" opacity="0.6" />
-          <path className="tide-path" d="M0,150 C120,190 220,110 340,150 C460,190 560,110 680,150 C760,175 830,140 900,150 L900,220 L0,220 Z" fill="#12876c" opacity="0.18" />
-        </svg>
-      </div>
 
-      <div className="auth-right">
-        <div className="auth-card">
-          <div style={{ background: 'rgba(31, 216, 176, 0.08)', border: '1px solid rgba(31, 216, 176, 0.25)', borderRadius: 'var(--radius-s)', padding: '10px 14px', marginBottom: '20px', fontSize: '12px', color: 'var(--foam)', lineHeight: 1.5 }}>
-            <span style={{ color: 'var(--teal)', fontWeight: 600 }}>&#9432; Judge &amp; Evaluator Notice:</span> Select any 1-click test role below or enter any credentials to explore with zero setup friction.
+        {error && (
+          <div style={{
+            background: 'rgba(181, 86, 58, 0.15)',
+            border: '1px solid var(--rust)',
+            color: 'var(--rust)',
+            padding: '8px 12px',
+            fontSize: '12px',
+            marginBottom: '14px',
+            borderRadius: '2px'
+          }}>
+            {error}
           </div>
+        )}
 
-          <div className="auth-tabs">
-            <button className={`auth-tab ${tab === 'login' ? 'active' : ''}`} onClick={() => { setTab('login'); setError(null); }}>Log in</button>
-            <button className={`auth-tab ${tab === 'signup' ? 'active' : ''}`} onClick={() => { setTab('signup'); setError(null); }}>Sign up</button>
-          </div>
-
-          {error && (
-            <div className="error-msg show">
-              {error}
+        {tab === 'signin' ? (
+          <form onSubmit={(e) => { e.preventDefault(); handleAuth('signin'); }} id="signin-fields">
+            <div className="field">
+              <label>Email</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@merchant.com"
+                id="signin-email"
+              />
             </div>
-          )}
-
-          {tab === 'login' && (
-            <form onSubmit={handleLogin} id="pane-login">
-              <h2>Welcome back</h2>
-              <div className="sub">Log in to your merchant recovery console.</div>
-              
-              <div className="field">
-                <label>Email</label>
-                <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@merchant.com" />
-              </div>
-              <div className="field">
-                <label>Password</label>
-                <input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
-              </div>
-              <div className="field">
-                <label>Active Role</label>
-                <select value={role} onChange={e => setRole(e.target.value as any)}>
-                  <option value="owner">Owner &mdash; full access</option>
-                  <option value="analyst">Analyst &mdash; manage cases &amp; approve tiers</option>
-                  <option value="viewer">Viewer &mdash; read-only</option>
-                </select>
-              </div>
-
-              <div className="row-between">
-                <label className="checkbox-row">
-                  <input type="checkbox" defaultChecked /> Remember this device
-                </label>
-                <button type="button" className="link-btn" onClick={() => setTab('forgot')}>Forgot password?</button>
-              </div>
-
-              <button type="submit" className="btn-primary" disabled={isSubmitting}>
-                <span className="btn-text">{isSubmitting ? 'Authenticating...' : 'Log In'}</span>
-              </button>
-
-              <div className="divider">
-                or 1-click test roles
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <button type="button" className="btn-secondary" onClick={() => handleQuickDemo('analyst')}>
-                  Analyst (Default)
-                </button>
-                <button type="button" className="btn-secondary" onClick={() => handleQuickDemo('viewer')}>
-                  Viewer (Read-Only)
-                </button>
-              </div>
-
-              <div className="guest-cta">
-                <button type="button" onClick={() => handleQuickDemo('owner')}>
-                  Skip auth entirely &mdash; <b>view live demo as Owner &rarr;</b>
-                </button>
-              </div>
-            </form>
-          )}
-
-          {tab === 'signup' && (
-            <form onSubmit={handleSignup} id="pane-signup">
-              <h2>Create your account</h2>
-              <div className="sub">Set up a new merchant recovery console.</div>
-
-              <div className="field">
-                <label>Full name</label>
-                <input type="text" required value={name} onChange={e => setName(e.target.value)} placeholder="Shabnam" />
-              </div>
-              <div className="field">
-                <label>Work email</label>
-                <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@merchant.com" />
-              </div>
-              <div className="field">
-                <label>Password</label>
-                <input type="password" required minLength={6} value={password} onChange={e => setPassword(e.target.value)} placeholder="Create a password" />
-              </div>
-              <div className="field">
-                <label>Your role</label>
-                <select value={role} onChange={e => setRole(e.target.value as any)}>
-                  <option value="owner">Owner &mdash; full access</option>
-                  <option value="analyst">Analyst &mdash; manage cases</option>
-                  <option value="viewer">Viewer &mdash; read only</option>
-                </select>
-              </div>
-
-              <button type="submit" className="btn-primary" style={{ marginTop: '12px' }} disabled={isSubmitting}>
-                <span className="btn-text">{isSubmitting ? 'Creating account...' : 'Create account'}</span>
-              </button>
-
-              <div className="guest-cta">
-                <button type="button" onClick={() => handleQuickDemo('owner')}>
-                  Or skip straight to <b>the live demo &rarr;</b>
-                </button>
-              </div>
-            </form>
-          )}
-
-          {tab === 'forgot' && (
-            <div id="pane-forgot">
-              <h2>Reset password</h2>
-              <div className="sub">We will send a demo reset link to your inbox.</div>
-              <div className="field">
-                <label>Email</label>
-                <input type="email" defaultValue={email} placeholder="you@merchant.com" />
-              </div>
-              <button type="button" className="btn-primary" onClick={() => { alert('Demo reset link sent to ' + email); setTab('login'); }}>
-                Send reset link
-              </button>
-              <div className="guest-cta">
-                <button type="button" onClick={() => setTab('login')}>&larr; Back to log in</button>
-              </div>
+            <div className="field">
+              <label>Password</label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                id="signin-password"
+              />
             </div>
-          )}
+            <button
+              type="submit"
+              className={`btn-primary ${isSubmitting ? 'loading' : ''}`}
+              disabled={isSubmitting}
+              id="signin-btn"
+            >
+              <span className="btn-label">{isSubmitting ? 'Authenticating...' : 'Sign in'}</span>
+              {isSubmitting && (
+                <span className="spinner">
+                  <span className="spinner-ring" />
+                </span>
+              )}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={(e) => { e.preventDefault(); handleAuth('signup'); }} id="signup-fields">
+            <div className="field">
+              <label>Full name</label>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Shabnam"
+                id="signup-name"
+              />
+            </div>
+            <div className="field">
+              <label>Email</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@merchant.com"
+                id="signup-email"
+              />
+            </div>
+            <div className="field">
+              <label>Password</label>
+              <input
+                type="password"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="At least 6 characters"
+                id="signup-password"
+              />
+            </div>
+            <button
+              type="submit"
+              className={`btn-primary ${isSubmitting ? 'loading' : ''}`}
+              disabled={isSubmitting}
+              id="signup-btn"
+            >
+              <span className="btn-label">{isSubmitting ? 'Creating account...' : 'Create account'}</span>
+              {isSubmitting && (
+                <span className="spinner">
+                  <span className="spinner-ring" />
+                </span>
+              )}
+            </button>
+          </form>
+        )}
+
+        <div className="divider">or continue as</div>
+
+        <div className="demo-roles">
+          <button
+            type="button"
+            className="role-btn"
+            disabled={isSubmitting}
+            onClick={() => handleQuickDemo('owner')}
+          >
+            <span className="role-name">Owner</span>
+            <span className="role-desc">full access &middot; limits</span>
+          </button>
+          <button
+            type="button"
+            className="role-btn"
+            disabled={isSubmitting}
+            onClick={() => handleQuickDemo('analyst')}
+          >
+            <span className="role-name">Analyst</span>
+            <span className="role-desc">act on cases</span>
+          </button>
+          <button
+            type="button"
+            className="role-btn"
+            disabled={isSubmitting}
+            onClick={() => handleQuickDemo('viewer')}
+          >
+            <span className="role-name">Viewer</span>
+            <span className="role-desc">read only</span>
+          </button>
+        </div>
+
+        <div className="login-foot">
+          Demo mode &middot; cryptographically signed session, not production SSO
         </div>
       </div>
     </div>

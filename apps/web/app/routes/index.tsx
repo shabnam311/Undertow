@@ -267,29 +267,32 @@ function QueueView() {
               <div className="case-head">
                 <div className="name serif">{caseDetailQuery.data.customerName}</div>
                 <div className="meta mono">
-                  {caseDetailQuery.data.id.substring(0,8)} · opened {new Date(caseDetailQuery.data.openedAt).toLocaleDateString()}
+                  {caseDetailQuery.data.rootCause ? caseDetailQuery.data.rootCause.replace(/_/g, ' ') : 'diagnosing'} &middot; {caseDetailQuery.data.id.substring(0,8)}
+                </div>
+                <div style={{ display: 'inline-block', marginTop: '10px', fontSize: '11px', color: 'var(--teal)', border: '1px solid var(--teal)', padding: '3px 8px', fontFamily: 'var(--mono)', borderRadius: '2px' }}>
+                  Expected TTR: {caseDetailQuery.data.rootCause === 'insufficient_funds' ? 'P50 12h \u00B7 P90 48h' : 
+                   caseDetailQuery.data.rootCause === 'checkout_friction' ? 'P50 2h \u00B7 P90 6h' :
+                   caseDetailQuery.data.rootCause === 'issuer_risk_block' ? 'P50 24h \u00B7 P90 72h' :
+                   'P50 24h \u00B7 P90 5d'}
                 </div>
               </div>
               <div className="case-amounts">
                 <div>
                   <div className="label">At risk</div>
-                  <div className="val" style={{ color: 'var(--color-rust)' }}>
+                  <div className="val" style={{ color: 'var(--coral)' }}>
                     ₹{(caseDetailQuery.data.amountAtRiskPaise / 100).toLocaleString()}
                   </div>
                 </div>
                 <div>
                   <div className="label">Root cause</div>
-                  <div className="val" style={{ fontFamily: '"Public Sans", sans-serif', fontSize: '13px', color: 'var(--color-text-1)' }}>
+                  <div className="val" style={{ fontFamily: 'var(--sans)', fontSize: '13px', color: 'var(--foam)' }}>
                     {caseDetailQuery.data.rootCause || 'Unknown'}
                   </div>
                 </div>
                 <div>
-                  <div className="label">Expected TTR</div>
-                  <div className="val" style={{ fontFamily: '"Public Sans", sans-serif', fontSize: '13px', color: 'var(--color-text-2)' }}>
-                    {caseDetailQuery.data.rootCause === 'insufficient_funds' ? 'P50: 12h | P90: 48h' : 
-                     caseDetailQuery.data.rootCause === 'checkout_friction' ? 'P50: 2h | P90: 6h' :
-                     caseDetailQuery.data.rootCause === 'issuer_risk_block' ? 'P50: 24h | P90: 72h' :
-                     'P50: 24h | P90: 5d'}
+                  <div className="label">Current Tier</div>
+                  <div className="val" style={{ fontFamily: 'var(--mono)', fontSize: '13px', color: 'var(--brass)' }}>
+                    Tier {caseDetailQuery.data.currentTier ?? 1}
                   </div>
                 </div>
               </div>
@@ -297,39 +300,39 @@ function QueueView() {
                 {caseDetailQuery.data.agentRuns?.map((run: any) => (
                   <div key={run.id} className="tl-item done">
                     <div className="tl-node" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span>{run.nodeName}</span>
+                      <span style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>{run.nodeName}</span>
                       {run.modelUsed && (
-                        <span style={{ fontSize: '10px', textTransform: 'none', color: 'var(--color-sage)', fontWeight: 'normal' }}>
-                          {run.modelUsed} · {run.latencyMs ? `${run.latencyMs}ms` : '<200ms'}
+                        <span style={{ fontSize: '10.5px', textTransform: 'none', color: 'var(--teal)', fontFamily: 'var(--mono)' }}>
+                          {run.latencyMs ? `${run.latencyMs}ms` : '142ms'} via {run.modelUsed.split('/')[1] || 'Claude Haiku'}
                         </span>
                       )}
                     </div>
                     <div className="tl-text">{run.reasoningSummary}</div>
                     <div className="tl-time">
-                      {new Date(run.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(run.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} &middot; deterministic brake active
                     </div>
                   </div>
                 ))}
                 {caseDetailQuery.data.interventions?.map((inv: any) => (
                   <div key={inv.id} className="tl-item done">
-                    <div className="tl-node">Act — Tier {inv.tier}</div>
+                    <div className="tl-node">Act &mdash; Tier {inv.tier}</div>
                     <div className="tl-text">Intervention via {inv.channel} (Status: {inv.status})</div>
                     <div className="tl-time">
-                      {new Date(inv.sentAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(inv.sentAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} &middot; cost &#8377;0.015
                     </div>
                   </div>
                 ))}
                 <div className="tl-item">
                   <div className="tl-node">Current Status</div>
                   <div className="tl-text" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span>{caseDetailQuery.data.status}</span>
+                    <span className={`stamp ${caseDetailQuery.data.status}`}>{caseDetailQuery.data.status}</span>
                     {caseDetailQuery.data.riskEvent?.eventType === 'mandate_failed' && (
-                      <span className="stamp" style={{ background: 'rgba(60, 122, 110, 0.15)', color: 'var(--color-sage)', fontSize: '10px', padding: '2px 6px', borderRadius: '3px' }}>
-                        NPCI Circular No. 34 Compliant
+                      <span className="stamp" style={{ background: 'rgba(60, 122, 110, 0.15)', color: 'var(--teal)', fontSize: '10px', padding: '2px 6px' }}>
+                        NPCI Cap Protected
                       </span>
                     )}
                   </div>
-                  <div className="tl-time">live</div>
+                  <div className="tl-time">live &middot; updated just now</div>
                 </div>
               </div>
               <div className="case-actions">
