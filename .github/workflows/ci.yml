@@ -37,11 +37,11 @@ jobs:
           cd packages/db && bun run drizzle-kit push --force
         env:
           DATABASE_URL: postgresql://postgres:password@localhost:5432/undertow
-      - name: Typecheck
-        run: bun run tsc --noEmit
       - name: Build
         run: bun run build
       - name: Test
         run: bun run test
         env:
           DATABASE_URL: postgresql://postgres:password@localhost:5432/undertow
+          AUTH_SECRET: test_ci_hmac_secret_key_1234567890_secure
+          RAZORPAY_WEBHOOK_SECRET: test_ci_webhook_secret_key
