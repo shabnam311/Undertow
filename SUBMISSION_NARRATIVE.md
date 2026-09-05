@@ -1,6 +1,9 @@
 # Undertow — Razorpay AI Buildathon Submission
 **Track 03:** AI Revenue Recovery
 
+> **🌐 Live Demo (Instant Access, 1-Click Test Roles):** [https://undertow-web-flax.vercel.app/](https://undertow-web-flax.vercel.app/)  
+> **🩺 Production API & Service Readiness:** [https://undertow-production-c0b8.up.railway.app/health](https://undertow-production-c0b8.up.railway.app/health)  
+
 ## 1. The Problem
 Money that looks lost is often still moving just beneath the surface. When a payment fails, a checkout is abandoned, or a mandate bounces, merchants typically resort to rigid, rule-based retry logic or blind batch-emailing. This approach is costly, burns customer goodwill, and leaves high-intent buyers stranded by technical glitches or issuer holds.
 
