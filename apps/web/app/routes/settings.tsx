@@ -156,17 +156,21 @@ export function SettingsComponent() {
                   onClick={async () => {
                     showToast('Seeding 60 benchmark recovery cases...');
                     try {
-                      await fetch('/trpc/auth.seedDemoData', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({})
-                      });
-                      showToast('60 benchmark cases successfully seeded!');
-                      setTimeout(() => { window.location.href = '/'; }, 1000);
+                      const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+                      const baseApi = isLocal ? 'http://localhost:3001' : 'https://undertow-production-c0b8.up.railway.app';
+                      const res = await fetch(`${baseApi}/seed`);
+                      const data = await res.json();
+                      if (data.success) {
+                        showToast('60 benchmark cases successfully seeded!');
+                        setTimeout(() => { window.location.href = '/'; }, 800);
+                      } else {
+                        showToast('Seeding failed: ' + (data.error || 'unknown'));
+                      }
                     } catch {
-                      showToast('Error seeding demo data');
+                      showToast('Network error connecting to backend');
                     }
                   }}
+
                 >
                   ⚡ Seed 60 Benchmark Cases
                 </button>

@@ -26,7 +26,10 @@ function App() {
   }))
   const [trpcClient] = useState(() => {
 
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const defaultProdUrl = 'https://undertow-production-c0b8.up.railway.app';
+    const apiUrl = import.meta.env.VITE_API_URL || (isLocal ? 'http://localhost:3001' : defaultProdUrl);
+
     return trpc.createClient({
       links: [
         httpBatchLink({
@@ -38,6 +41,7 @@ function App() {
         }),
       ],
     });
+
   })
 
   return (
