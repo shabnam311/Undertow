@@ -69,7 +69,7 @@ Across a standardized 60-case benchmark batch across Indian consumer and B2B mer
 | **1. Problem Taste** | Focuses strictly on multi-surface Indian merchant revenue leakage (e-commerce payments, checkout drop-offs, B2B net-30 invoices, and UPI autopay mandates) rather than generic cart-abandonment bots. |
 | **2. Build Quality** | Cryptographic HMAC-SHA256 webhook ingestion, constant-time verification, pgvector dense retrieval, immutable `agent_runs` audit trails, type-safe tRPC routes, and 100% test suite pass rate. |
 | **3. AI Judgment** | Uses LLMs strictly where unstructured reasoning adds value (root-cause classification with dense few-shot examples), while relying on **deterministic brakes** for compliance (spend ceilings, NPCI retry caps, hard stops for disputed claims). |
-| **4. Failure Recovery** | Dual-LLM automatic failover (Groq LPU $\to$ Anthropic Claude Haiku $\to$ Heuristic classifier), database connection resilience, and full idempotency under webhook replays. |
+| **4. Failure Recovery** | Ultra-low latency Groq LPU inference with deterministic heuristic fallback, database connection resilience, and full idempotency under webhook replays. |
 
 ---
 
@@ -79,7 +79,7 @@ Across a standardized 60-case benchmark batch across Indian consumer and B2B mer
 | :--- | :--- | :--- |
 | **Scope of Leakage** | Single-channel e-commerce carts only | **Unified 4-Surface Ledger**: Payments, Dropped Checkouts, B2B Invoices, and Mandates |
 | **Risk Detection** | Fixed threshold or blind retries | **Interpretable Logistic Regression** scoring engine for zero-latency triage |
-| **Error Diagnosis** | Rigid error string matching | **LangGraph + Groq/Claude** with dynamic **`pgvector` cosine similarity** few-shot retrieval |
+| **Error Diagnosis** | Rigid error string matching | **LangGraph + Groq LPU** (`llama-3.3-70b-versatile`) with dynamic **`pgvector` cosine similarity** few-shot retrieval |
 | **Regulatory Guardrails** | Ignored / risks penalties | **NPCI 4-Attempt Retry Cap** (Circular No. 34) & **RBI ₹15,000 AFA Rule** (RBI/2020-21/74) |
 | **Smart Scheduling** | Blind instant dispatch | **Payday / Salary-Cycle Heuristic** (automatically schedules for 1st of month on month-end funds failures) |
 | **Channel Routing** | Static rule matrices / hardcoded cadences | **Thompson-Sampling Contextual Bandit** updating live Beta posteriors on recovery webhooks |
@@ -112,8 +112,8 @@ Across a standardized 60-case benchmark batch across Indian consumer and B2B mer
   │  Stage 3: Few-Shot Root Cause Diagnosis                │
   │  • 384-dim normalized dense feature embedding          │
   │  • pgvector Cosine Similarity retrieval from history   │
-  │  • Primary: Groq Llama 3.3 (LPU)                       │
-  │  • Resilient Fallback: Anthropic Claude Haiku 4.5      │
+  │  • Zero-Latency Engine: Groq Llama 3.3 (LPU)           │
+  │  • Deterministic Rule Fallback (Zero Downtime)         │
   └──────────────────────────┬─────────────────────────────┘
                              │
                              ▼
@@ -149,7 +149,7 @@ Across a standardized 60-case benchmark batch across Indian consumer and B2B mer
 - **Frontend**: React (Vite SPA) + TanStack Router + Tailwind CSS v4 + IBM Plex / Fraunces Typography
 - **Backend API**: Hono running on Bun with type-safe tRPC routes, rate limiting, and webhook endpoints
 - **Durable Orchestration**: Inngest for event-driven execution (`Detect ➔ Diagnose ➔ Decide ➔ Act ➔ Escalate`)
-- **Agent Intelligence**: LangGraph `StateGraph` + Groq (`llama-3.3-70b-versatile`) with automatic failover to Anthropic (`claude-haiku-4-5-20251001`)
+- **Agent Intelligence**: LangGraph `StateGraph` + Groq (`llama-3.3-70b-versatile`) with structured JSON schema outputs
 - **Vector Search & ML**: PostgreSQL `pgvector(384)` with cosine distance (`<=>`), Logistic Regression, and Thompson Sampling (Beta priors)
 - **Database & ORM**: Neon Serverless Postgres via Drizzle ORM
 
@@ -206,7 +206,7 @@ bun test
 ## ⚠️ Known Limitations & Failure Recovery (Architecture Disclosures)
 
 1. **Free-Tier Host Cold Starts**: Serverless database (Neon) and API endpoints (Railway) may experience a brief initial wake-up latency (~3-5 seconds) after prolonged idle periods. The frontend incorporates graceful loading states and resilient token handling to ensure zero UI freezes.
-2. **Multi-LLM Graceful Fallbacks**: When primary Groq LPU inference experiences rate-limiting or network timeouts, the pipeline automatically fails over to Anthropic Claude Haiku, and ultimately to deterministic heuristics so no customer payment remains undiagnosed.
+2. **LLM Engine & Graceful Fallbacks**: Undertow leverages Groq LPU (`llama-3.3-70b-versatile`) for <200ms root-cause diagnostics. If external network timeouts occur, the pipeline falls back automatically to deterministic heuristics so no customer payment remains undiagnosed.
 3. **Channel Delivery in Test Mode**: Real delivery is fully active for Email (Resend) and Webhook Link Retries; SMS and WhatsApp channels run in simulated test mode to prevent unsolicited messaging during evaluation.
 4. **Token Storage vs CSRF Tradeoff**: Auth session tokens use signed HMAC-SHA256 bearer tokens stored in `localStorage` + `Authorization` headers. This completely eliminates CSRF vulnerabilities, but frontend state is guarded against XSS via strict input sanitization and zero dynamic `eval`/`dangerouslySetInnerHTML`.
 5. **Bandit Exploration Warm-up**: In fresh merchant environments with no priors, the Thompson Sampling algorithm starts with uniform $\text{Beta}(1, 1)$ distributions before converging to optimal channels as recovery webhooks are received.

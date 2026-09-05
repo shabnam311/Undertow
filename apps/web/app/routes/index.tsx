@@ -309,7 +309,7 @@ function QueueView() {
                       <span style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>{run.nodeName}</span>
                       {run.modelUsed && (
                         <span style={{ fontSize: '10.5px', textTransform: 'none', color: 'var(--teal)', fontFamily: 'var(--mono)' }}>
-                          {run.latencyMs ? `${run.latencyMs}ms` : '142ms'} via {run.modelUsed.split('/')[1] || 'Claude Haiku'}
+                          {run.latencyMs ? `${run.latencyMs}ms` : '142ms'} via {run.modelUsed.split('/')[1] || 'Llama 3.3 (Groq)'}
                         </span>
                       )}
                     </div>

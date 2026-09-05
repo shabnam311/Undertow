@@ -10,16 +10,16 @@ Money that looks lost is often still moving just beneath the surface. When a pay
 ## 2. Our Solution: Undertow
 **Undertow is a bounded, auditable agent that acts as a recovery operating system for merchant revenue leakage.**
 
-Instead of blindly retrying, Undertow reads the unstructured context of a failure event, dynamically diagnoses the *root cause* using LLMs (Llama 3.3 / Claude Haiku) with vector similarity context, and computes a precise recovery intervention bounded by strict merchant-defined spend ceilings and escalation ladders. 
+Instead of blindly retrying, Undertow reads the unstructured context of a failure event, dynamically diagnoses the *root cause* using zero-latency LLM inference (Groq Llama 3.3 LPU) with vector similarity context, and computes a precise recovery intervention bounded by strict merchant-defined spend ceilings and escalation ladders. 
 
 It does not ask "did this fail?" It asks, *"why did this fail, how much is at risk, and what is the most cost-efficient channel (email, SMS, WhatsApp) to pull it back?"*
 
 ## 3. Core Architecture
 - **Ingestion & Validation**: Webhooks (e.g., Razorpay) are ingested securely, validated for signatures, and checked for idempotency using database-level constraints.
 - **Orchestration (Inngest)**: The recovery lifecycle (Detect, Diagnose, Decide, Act, Escalate) is managed by Inngest, ensuring that steps are durable, resumable, and auditable.
-- **Agentic Reasoning (LangGraph & Anthropic)**: 
+- **Agentic Reasoning (LangGraph & Groq LPU)**: 
   - The `detect` phase evaluates an interpretable logistic regression scoring function.
-  - The `diagnose` phase uses LangGraph and Claude Haiku (`claude-haiku-4-5-20251001`) with vector-similarity few-shot context to classify raw events into a controlled vocabulary of 9 root causes.
+  - The `diagnose` phase uses LangGraph and Groq Llama 3.3 (`llama-3.3-70b-versatile`) with pgvector-similarity few-shot context to classify raw events into a controlled vocabulary of 9 root causes.
   - The `decide` phase uses a Thompson-sampling Contextual Bandit that dynamically balances exploration and exploitation across channels/tiers using live Beta distributions.
 - **Data Model (Drizzle + PostgreSQL)**: Strongly typed schema utilizing `pgEnum`, composite unique constraints, pgvector, and relations to ensure structural integrity across Customers, Risk Events, Cases, Interventions, and Audit Trails (`agentRuns`).
 - **Control Plane (React + Hono tRPC)**: A live operations dashboard displaying real-time aggregated KPIs (Amount at Risk, Recovered, Cost per Rupee) and a dynamic timeline queue of agent decisions.
