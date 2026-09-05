@@ -182,14 +182,37 @@ function QueueView() {
           </div>
           {casesQuery.isLoading ? (
             <div style={{ padding: '24px' }}>Loading cases...</div>
+          ) : casesQuery.error ? (
+            <div style={{ padding: '32px 24px', textAlign: 'center', color: '#B5563A' }}>
+              <p style={{ fontWeight: 600, fontSize: '14px' }}>Unable to load recovery cases: {casesQuery.error.message}</p>
+              <button 
+                className="btn-primary" 
+                style={{ width: 'auto', padding: '8px 16px', marginTop: '12px' }}
+                onClick={() => {
+                  localStorage.removeItem('undertow_token');
+                  localStorage.removeItem('undertow_user');
+                  window.location.href = '/login';
+                }}
+              >
+                Re-authenticate via 1-Click Preset
+              </button>
+            </div>
           ) : filteredCases.length === 0 ? (
             <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--color-text-3)' }}>
               <p>Nothing at risk right now</p>
-              <p style={{ fontSize: '11px', marginTop: '8px' }}>
-                {kpisQuery.data?.lastClosedAt 
-                  ? `Last case closed at ${new Date(kpisQuery.data.lastClosedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                  : 'No cases closed yet'}
-              </p>
+              <button 
+                className="btn-primary" 
+                style={{ width: 'auto', padding: '8px 16px', marginTop: '12px' }}
+                onClick={async () => {
+                  const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+                  const baseApi = isLocal ? 'http://localhost:3001' : 'https://undertow-production-c0b8.up.railway.app';
+                  await fetch(`${baseApi}/seed`);
+                  utils.cases.list.invalidate();
+                  utils.cases.kpis.invalidate();
+                }}
+              >
+                Seed 60 Benchmark Demo Cases
+              </button>
             </div>
           ) : (
           <table>
