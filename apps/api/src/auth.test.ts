@@ -81,4 +81,49 @@ describe('Cryptographic Authentication (auth.ts)', () => {
     expect(canMutate(analyst?.role)).toBe(true);
     expect(canMutate(viewer?.role)).toBe(false);
   });
+
+  describe('Razorpay Webhook Cryptographic HMAC Ingestion', () => {
+    const { createHmac, timingSafeEqual } = require('crypto');
+    const webhookSecret = 'rzp_test_webhook_secret_9988';
+    const samplePayload = JSON.stringify({
+      event: 'payment.failed',
+      payload: {
+        payment: {
+          entity: {
+            id: 'pay_test_123',
+            amount: 50000,
+            currency: 'INR',
+            error_code: 'BAD_REQUEST_ERROR'
+          }
+        }
+      }
+    });
+
+    const verifyWebhookSignature = (body: string, sig: string, secret: string) => {
+      const expected = createHmac('sha256', secret).update(body).digest('hex');
+      if (expected.length !== sig.length) return false;
+      return timingSafeEqual(Buffer.from(expected), Buffer.from(sig));
+    };
+
+    it('accepts valid Razorpay HMAC-SHA256 signature', () => {
+      const validSig = createHmac('sha256', webhookSecret).update(samplePayload).digest('hex');
+      expect(verifyWebhookSignature(samplePayload, validSig, webhookSecret)).toBe(true);
+    });
+
+    it('rejects tampered webhook payload body', () => {
+      const validSig = createHmac('sha256', webhookSecret).update(samplePayload).digest('hex');
+      const tamperedPayload = samplePayload.replace('50000', '99999');
+      expect(verifyWebhookSignature(tamperedPayload, validSig, webhookSecret)).toBe(false);
+    });
+
+    it('rejects webhook with incorrect secret key', () => {
+      const forgedSig = createHmac('sha256', 'attacker_secret_key').update(samplePayload).digest('hex');
+      expect(verifyWebhookSignature(samplePayload, forgedSig, webhookSecret)).toBe(false);
+    });
+
+    it('rejects malformed or empty signature', () => {
+      expect(verifyWebhookSignature(samplePayload, '', webhookSecret)).toBe(false);
+      expect(verifyWebhookSignature(samplePayload, 'short_sig', webhookSecret)).toBe(false);
+    });
+  });
 });

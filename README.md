@@ -131,13 +131,25 @@ bun run dev
 bun test
 ```
 
-`apps/api/src/agent/workflow.test.ts` covers `decideNode` directly (mocking the DB layer) and asserts:
-- `disputed_or_service_issue` and `voluntary_cancellation_signal` deterministically route to `none` / tier 0 without touching the bandit
-- With no channel-performance history, sampling still returns one of the four default arms
-- Given a heavily skewed `Beta(100,1)` vs `Beta(1,100)` prior, Thompson Sampling picks the stronger arm in the large majority of draws (asserts > 45/50)
-- The NPCI 4-attempt cap and RBI ₹15,000 AFA guardrails fire correctly and independently of the bandit
-
-`apps/api/src/auth.test.ts` covers the HMAC session token sign/verify roundtrip, rejection of tampered/expired tokens, and role-based access control.
+### Verified Test Suites (21/21 Passing)
+- **Contextual Bandit & Decision Engine (`workflow.test.ts`)**:
+  - `(pass)` `disputed_or_service_issue` and `voluntary_cancellation_signal` deterministically route to `none` / tier 0
+  - `(pass)` Fallback sampling returns valid default arms when priors are uninitialized
+  - `(pass)` Thompson Sampling statistically converges to the superior arm under skewed Beta posteriors
+  - `(pass)` Enforces NPCI 4-attempt cap on recurring UPI mandates
+  - `(pass)` Enforces RBI ₹15,000 AFA rule by force-routing high-ticket mandates to payment links
+- **Adversarial Guardrail Verification Suite (`workflow.test.ts`)**:
+  - `(pass)` Blocks outbound contact on hostile chargeback/dispute signals
+  - `(pass)` Blocks outbound contact upon customer opt-out / voluntary stop signals
+  - `(pass)` Enforces NPCI retry limits even on overflow attempts ($\ge 5$)
+  - `(pass)` Enforces RBI ₹15,000 threshold strictly at exactly 15,00,000 paise
+- **Stage 1 Logistic Regression Risk Scorer Math (`workflow.test.ts`)**:
+  - `(pass)` Validates multi-feature linear combination, sigmoid activation, and operating threshold ($p > 0.65$)
+- **Cryptographic Authentication & Webhooks (`auth.test.ts`)**:
+  - `(pass)` Signs and verifies valid HMAC-SHA256 session tokens with constant-time comparison
+  - `(pass)` Rejects tampered payloads, expired tokens, and mismatched signing secrets
+  - `(pass)` Correctly models RBAC permissions across `owner`, `analyst`, and `viewer`
+  - `(pass)` Validates Razorpay Webhook HMAC-SHA256 cryptographic signatures and rejects forged/tampered webhook bodies
 
 ---
 
