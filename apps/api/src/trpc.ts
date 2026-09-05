@@ -60,10 +60,8 @@ async function resolveMerchantId(userMerchantId?: string): Promise<string | null
 
 export const appRouter = t.router({
   cases: t.router({
-    kpis: protectedProcedure.query(async ({ ctx }) => {
-      const activeMerchantId = await resolveMerchantId(ctx.user.merchantId);
+    kpis: protectedProcedure.query(async () => {
       const allCases = await db.query.cases.findMany({
-        where: activeMerchantId ? eq(cases.merchantId, activeMerchantId) : undefined,
         with: { interventions: true }
       });
 
@@ -94,7 +92,6 @@ export const appRouter = t.router({
 
       // Find latest closed case for real empty-state and summary timestamps
       const latestClosed = await db.query.cases.findFirst({
-        where: activeMerchantId ? eq(cases.merchantId, activeMerchantId) : undefined,
         orderBy: (cases, { desc }) => [desc(cases.closedAt)]
       });
 
@@ -109,10 +106,8 @@ export const appRouter = t.router({
       };
     }),
 
-    list: protectedProcedure.query(async ({ ctx }) => {
-      const activeMerchantId = await resolveMerchantId(ctx.user.merchantId);
+    list: protectedProcedure.query(async () => {
       const caseList = await db.query.cases.findMany({
-        where: activeMerchantId ? eq(cases.merchantId, activeMerchantId) : undefined,
         with: {
           customer: true,
           riskEvent: true,
@@ -140,7 +135,7 @@ export const appRouter = t.router({
     
     get: protectedProcedure
       .input(z.object({ id: z.string() }))
-      .query(async ({ input, ctx }) => {
+      .query(async ({ input }) => {
         const caseRecord = await db.query.cases.findFirst({
           where: eq(cases.id, input.id),
           with: {
@@ -164,6 +159,7 @@ export const appRouter = t.router({
           eventType: caseRecord.riskEvent?.eventType,
         };
       }),
+
 
     approveNextTier: requireAnalyst
 
@@ -254,13 +250,11 @@ export const appRouter = t.router({
   }),
 
   evaluation: t.router({
-    getBatchResults: protectedProcedure.query(async ({ ctx }) => {
+    getBatchResults: protectedProcedure.query(async () => {
       const allCases = await db.query.cases.findMany({
-        where: ctx.user.merchantId !== 'no-merchant' 
-          ? eq(cases.merchantId, ctx.user.merchantId)
-          : undefined,
         with: { stopEvents: true, interventions: true }
       });
+
 
       const totalCases = allCases.length || 1;
       let recovered = 0;
