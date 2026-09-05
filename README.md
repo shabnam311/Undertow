@@ -24,7 +24,7 @@ Stage 1 — Detect (apps/api/src/inngest/functions.ts: processRiskEvent)
   ▼
 Stage 2 — Diagnose (apps/api/src/agent/workflow.ts: diagnoseNode, LangGraph StateGraph)
   • Fast path: `insufficient_funds` inferred directly from structured Razorpay error reason, no LLM call needed
-  • Dense vector retrieval: computes 384-dim feature vector from event payload and performs pgvector cosine-similarity lookup against past cases for dynamic few-shot context
+  • Feature-hash vector retrieval: builds a 384-dim deterministic projection vector from event payload and performs pgvector cosine-similarity lookup against past cases for dynamic few-shot context
   • Zero-Latency LLM: Groq `llama-3.3-70b-versatile` with structured Zod schema output across 9 controlled root causes
   ▼
 Stage 3 — Decide (apps/api/src/agent/workflow.ts: decideNode)
