@@ -1,4 +1,4 @@
-﻿import { createRoute, useNavigate } from '@tanstack/react-router';
+import { createRoute, useNavigate } from '@tanstack/react-router';
 import { Route as rootRoute } from './__root';
 import { useState } from 'react';
 import { trpc } from '../../src/trpc';
@@ -19,21 +19,6 @@ export function LoginComponent() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const performClientAuth = (authRole: 'owner' | 'analyst' | 'viewer', authEmail: string, authName: string) => {
-    const userPayload = {
-      userId: 'user-' + authEmail.replace(/[^a-zA-Z0-9]/g, '-').slice(0, 15),
-      email: authEmail,
-      name: authName,
-      role: authRole,
-      merchantId: 'merchant-default',
-      merchantName: 'Meridian Textiles',
-    };
-    const token = 'demo_' + btoa(JSON.stringify(userPayload));
-    localStorage.setItem('undertow_token', token);
-    localStorage.setItem('undertow_user', JSON.stringify(userPayload));
-    window.location.href = '/';
-  };
-
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: (data) => {
       localStorage.setItem('undertow_token', data.token);
@@ -41,8 +26,8 @@ export function LoginComponent() {
       window.location.href = '/';
     },
     onError: (err) => {
-      const userName = email.includes('shabnam') ? 'Shabnam' : 'Recovery Operator';
-      performClientAuth(role, email, userName);
+      setIsSubmitting(false);
+      setError(err.message || 'Authentication failed. Please check your connection to the API.');
     }
   });
 
@@ -53,7 +38,8 @@ export function LoginComponent() {
       window.location.href = '/';
     },
     onError: (err) => {
-      performClientAuth(role, email, name);
+      setIsSubmitting(false);
+      setError(err.message || 'Account creation failed. Please check your connection to the API.');
     }
   });
 
@@ -73,9 +59,9 @@ export function LoginComponent() {
 
   const handleQuickDemo = (demoRole: 'owner' | 'analyst' | 'viewer') => {
     const demoEmail = `${demoRole}@undertow.demo`;
-    const demoName = demoRole === 'owner' ? 'Shabnam' : demoRole === 'analyst' ? 'Demo Analyst' : 'Evaluator (Viewer)';
+    setError(null);
     setIsSubmitting(true);
-    performClientAuth(demoRole, demoEmail, demoName);
+    loginMutation.mutate({ email: demoEmail, password: 'demopassword', role: demoRole });
   };
 
   return (

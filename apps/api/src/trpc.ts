@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { db, cases, riskEvents, customers, merchants, stopEvents } from '@undertow/db';
 import { eq, desc } from 'drizzle-orm';
 import { inngest } from './inngest/client';
+import { signSessionToken } from './auth';
 
 export type Context = {
   user: {
@@ -331,9 +332,9 @@ export const appRouter = t.router({
         const role = input.role || (input.email.includes('owner') ? 'owner' : input.email.includes('viewer') ? 'viewer' : 'analyst');
         const name = input.email.includes('shabnam') ? 'Shabnam' : 'Recovery Operator';
         
-        // Construct structured session token
+        // Construct structured session token and sign with HMAC-SHA256
         const tokenPayload = {
-          userId: 'user-' + input.email.replace(/[^a-zA-Z0-9]/g, '-').slice(0, 15),
+          id: 'user-' + input.email.replace(/[^a-zA-Z0-9]/g, '-').slice(0, 15),
           email: input.email,
           name,
           role,
@@ -341,7 +342,7 @@ export const appRouter = t.router({
           merchantName,
         };
 
-        const token = 'demo_' + Buffer.from(JSON.stringify(tokenPayload)).toString('base64');
+        const token = signSessionToken(tokenPayload);
 
         return {
           token,
@@ -377,7 +378,7 @@ export const appRouter = t.router({
         }
 
         const tokenPayload = {
-          userId: 'user-' + input.email.replace(/[^a-zA-Z0-9]/g, '-').slice(0, 15),
+          id: 'user-' + input.email.replace(/[^a-zA-Z0-9]/g, '-').slice(0, 15),
           email: input.email,
           name: input.name,
           role: input.role,
@@ -385,7 +386,7 @@ export const appRouter = t.router({
           merchantName,
         };
 
-        const token = 'demo_' + Buffer.from(JSON.stringify(tokenPayload)).toString('base64');
+        const token = signSessionToken(tokenPayload);
 
         return {
           token,

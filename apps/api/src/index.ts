@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+﻿import { Hono } from 'hono';
 import { trpcServer } from '@hono/trpc-server';
 import { razorpayWebhook } from './webhooks/razorpay';
 import { serve } from 'inngest/hono';
@@ -7,6 +7,7 @@ import { processRiskEvent, executeIntervention, evaluateEscalation, processCaseC
 import { appRouter } from './trpc';
 import { cors } from 'hono/cors';
 import { db, merchants } from '@undertow/db';
+import { verifySessionToken } from './auth';
 
 const app = new Hono();
 
@@ -44,10 +45,8 @@ app.use(
   trpcServer({
     router: appRouter,
     createContext: async (opts, c) => {
-      // In @hono/trpc-server, opts.req is a standard Fetch Request (use .headers.get) or c is Hono Context
       const authHeader = (opts?.req?.headers?.get && opts.req.headers.get('Authorization')) || 
-                         (c?.req?.header && c.req.header('Authorization')) || 
-                         'Bearer demo-secret-key';
+                         (c?.req?.header && c.req.header('Authorization'));
                          
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return { user: null };
@@ -55,52 +54,23 @@ app.use(
 
       const token = authHeader.replace('Bearer ', '').trim();
 
-      // Fetch the merchant that owns the latest seeded cases dynamically
-      const latestCase = await db.query.cases.findFirst({
-        orderBy: (cases, { desc }) => [desc(cases.openedAt)]
-      });
-      let merchantId = latestCase?.merchantId;
-      let merchantName = 'Meridian Textiles';
-      
-      if (merchantId) {
-        const m = await db.query.merchants.findFirst({ where: eq(merchants.id, merchantId) });
-        if (m?.name) merchantName = m.name;
-      } else {
-        const merchantList = await db.select({ id: merchants.id, name: merchants.name }).from(merchants).limit(1);
-        if (merchantList.length > 0) {
-          merchantId = merchantList[0].id;
-          merchantName = merchantList[0].name;
-        }
+      // 1. Verify cryptographic HMAC-SHA256 session token
+      const verifiedSession = verifySessionToken(token);
+      if (verifiedSession) {
+        return {
+          user: {
+            id: verifiedSession.id,
+            role: verifiedSession.role,
+            merchantId: verifiedSession.merchantId,
+            email: verifiedSession.email,
+            name: verifiedSession.name,
+            merchantName: verifiedSession.merchantName,
+          }
+        };
       }
 
-      if (token.startsWith('demo_')) {
-        try {
-          const decoded = JSON.parse(Buffer.from(token.replace('demo_', ''), 'base64').toString('utf8'));
-          return {
-            user: {
-              id: decoded.userId || 'user-1',
-              role: decoded.role || 'analyst',
-              merchantId: merchantId || decoded.merchantId || 'no-merchant',
-              email: decoded.email || 'analyst@undertow.demo',
-              name: decoded.name || 'Shabnam',
-              merchantName: merchantName || decoded.merchantName || 'Meridian Textiles',
-            }
-          };
-        } catch (e) {
-          // fallback to standard demo session
-        }
-      }
-
-      return {
-        user: {
-          id: 'user-1',
-          role: 'analyst' as const,
-          merchantId: merchantId || 'no-merchant',
-          email: 'analyst@undertow.demo',
-          name: 'Shabnam',
-          merchantName: merchantName || 'Meridian Textiles',
-        },
-      };
+      // 2. Reject all unsigned, invalid, or tampered tokens
+      return { user: null };
     },
   })
 );
