@@ -260,9 +260,15 @@ function QueueView() {
         </div>
 
         <div className="panel">
-          {caseDetailQuery.isLoading ? (
-            <div style={{ padding: '24px' }}>Loading...</div>
+          {!selectedCaseId ? (
+            <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--color-text-3)' }}>
+              <p>Select a case to inspect recovery details</p>
+              <p style={{ fontSize: '11px', marginTop: '8px', color: 'var(--muted-2)' }}>Click any row in the open cases table</p>
+            </div>
+          ) : caseDetailQuery.isLoading ? (
+            <div style={{ padding: '24px' }}>Loading case details...</div>
           ) : caseDetailQuery.data ? (
+
             <>
               <div className="case-head">
                 <div className="name serif">{caseDetailQuery.data.customerName}</div>

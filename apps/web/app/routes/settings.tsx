@@ -1,4 +1,4 @@
-﻿import { createRoute } from '@tanstack/react-router';
+import { createRoute } from '@tanstack/react-router';
 import { Route as rootRoute } from './__root';
 import { useState } from 'react';
 
@@ -147,13 +147,36 @@ export function SettingsComponent() {
 
           {activeTab === 'danger' && (
             <div className="settings-panel danger-panel">
-              <h4>Danger Zone</h4>
-              <div className="desc">Reset cases, revoke sessions, or purge mock state.</div>
-              <button className="btn-danger" onClick={() => { localStorage.clear(); window.location.href = '/login'; }}>
-                Reset Session & Log Out
-              </button>
+              <h4>Demo Data & Reset</h4>
+              <div className="desc">Seed synthetic benchmark batch or reset session.</div>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+                <button 
+                  className="btn-primary" 
+                  style={{ width: 'auto', padding: '10px 18px' }}
+                  onClick={async () => {
+                    showToast('Seeding 60 benchmark recovery cases...');
+                    try {
+                      await fetch('/trpc/auth.seedDemoData', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                      });
+                      showToast('60 benchmark cases successfully seeded!');
+                      setTimeout(() => { window.location.href = '/'; }, 1000);
+                    } catch {
+                      showToast('Error seeding demo data');
+                    }
+                  }}
+                >
+                  ⚡ Seed 60 Benchmark Cases
+                </button>
+                <button className="btn-danger" style={{ width: 'auto', padding: '10px 18px' }} onClick={() => { localStorage.clear(); window.location.href = '/login'; }}>
+                  Reset Session
+                </button>
+              </div>
             </div>
           )}
+
         </div>
       </div>
 

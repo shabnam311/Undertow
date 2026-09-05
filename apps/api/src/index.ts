@@ -38,6 +38,17 @@ app.get('/health', async (c) => {
   });
 });
 
+app.get('/seed', async (c) => {
+  try {
+    const caller = appRouter.createCaller({ user: null });
+    const res = await caller.auth.seedDemoData();
+    return c.json({ success: true, message: 'Seeded 60 benchmark recovery cases', data: res });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+
 // Attach tRPC with CORS and Context
 app.use(
   '/trpc/*',

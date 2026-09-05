@@ -15,8 +15,17 @@ declare module '@tanstack/react-router' {
 }
 
 function App() {
-  const [queryClient] = useState(() => new QueryClient())
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: 2,
+        retryDelay: 1000,
+        staleTime: 5000,
+      }
+    }
+  }))
   const [trpcClient] = useState(() => {
+
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
     return trpc.createClient({
       links: [
