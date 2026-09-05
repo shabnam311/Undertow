@@ -1,4 +1,4 @@
-﻿import { Outlet, createRootRoute, Link, useLocation, useNavigate } from '@tanstack/react-router';
+import { Outlet, createRootRoute, Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import '../style.css';
 
@@ -12,37 +12,35 @@ function RootComponent() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   
   const [user, setUser] = useState<{ name: string; email: string; role: string; merchantName: string } | null>(null);
-  const [authChecked, setAuthChecked] = useState(false);
+  const isAuthPage = location.pathname === '/login';
+  const hasToken = typeof window !== 'undefined' ? !!localStorage.getItem('undertow_token') : false;
 
   useEffect(() => {
     try {
       const token = localStorage.getItem('undertow_token');
       const stored = localStorage.getItem('undertow_user');
-      
-      const isAuthPage = location.pathname === '/login';
 
       if (!token && !isAuthPage) {
-        navigate({ to: '/login' });
+        window.location.replace('/login');
+        return;
       } else if (stored) {
         setUser(JSON.parse(stored));
       }
     } catch (e) {}
     setAuthChecked(true);
-  }, [location.pathname]);
+  }, [location.pathname, isAuthPage]);
 
   const handleLogout = () => {
     localStorage.removeItem('undertow_token');
     localStorage.removeItem('undertow_user');
-    window.location.href = '/login';
+    window.location.replace('/login');
   };
-
-  const isAuthPage = location.pathname === '/login';
 
   if (isAuthPage) {
     return <Outlet />;
   }
 
-  if (!authChecked && !localStorage.getItem('undertow_token')) {
+  if (!hasToken) {
     return null;
   }
 
