@@ -18,36 +18,16 @@ export function LoginComponent() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const performLocalAuth = (authRole: 'owner' | 'analyst' | 'viewer', authEmail: string, authName: string) => {
-    // Generate valid session payload
-    const userPayload = {
-      id: 'user-' + authEmail.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 20),
-      email: authEmail.toLowerCase(),
-      name: authName,
-      role: authRole,
-      merchantId: 'merchant-default',
-      merchantName: 'Meridian Textiles',
-    };
-    
-    // Sign or base64 token compatible with verifySessionToken
-    const b64 = btoa(JSON.stringify({ ...userPayload, exp: Math.floor(Date.now() / 1000) + 86400 }));
-    const token = 'ut_' + b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') + '.devsig';
-    
-    localStorage.setItem('undertow_token', token);
-    localStorage.setItem('undertow_user', JSON.stringify(userPayload));
-    window.location.href = '/';
-  };
-
   const loginMutation = trpc.auth.login.useMutation({
+
     onSuccess: (data) => {
       localStorage.setItem('undertow_token', data.token);
       localStorage.setItem('undertow_user', JSON.stringify(data.user));
       window.location.href = '/';
     },
-    onError: () => {
-      // Graceful fallback for cold-starting API / mock mode
-      const userName = email.includes('shabnam') ? 'Shabnam' : 'Recovery Operator';
-      performLocalAuth(role, email, userName);
+    onError: (err) => {
+      setIsSubmitting(false);
+      setError(err.message || 'Unable to connect to recovery API server. Please check your connection and try again.');
     }
   });
 
@@ -57,8 +37,9 @@ export function LoginComponent() {
       localStorage.setItem('undertow_user', JSON.stringify(data.user));
       window.location.href = '/';
     },
-    onError: () => {
-      performLocalAuth(role, email, name);
+    onError: (err) => {
+      setIsSubmitting(false);
+      setError(err.message || 'Unable to create merchant account. Please try again.');
     }
   });
 
@@ -66,41 +47,23 @@ export function LoginComponent() {
     e.preventDefault();
     setError(null);
     setIsSubmitting(true);
-    try {
-      loginMutation.mutate({ email, password, role });
-    } catch {
-      performLocalAuth(role, email, 'Shabnam');
-    }
+    loginMutation.mutate({ email, password, role });
   };
 
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsSubmitting(true);
-    try {
-      signupMutation.mutate({ name, email, password, role });
-    } catch {
-      performLocalAuth(role, email, name);
-    }
+    signupMutation.mutate({ name, email, password, role });
   };
 
   const handleQuickDemo = (demoRole: 'owner' | 'analyst' | 'viewer') => {
     const demoEmail = `${demoRole}@undertow.demo`;
-    const demoName = demoRole === 'owner' ? 'Shabnam' : demoRole === 'analyst' ? 'Demo Analyst' : 'Evaluator (Viewer)';
+    setError(null);
     setIsSubmitting(true);
-    try {
-      loginMutation.mutate(
-        { email: demoEmail, password: 'demopassword', role: demoRole },
-        {
-          onError: () => {
-            performLocalAuth(demoRole, demoEmail, demoName);
-          }
-        }
-      );
-    } catch {
-      performLocalAuth(demoRole, demoEmail, demoName);
-    }
+    loginMutation.mutate({ email: demoEmail, password: 'demopassword', role: demoRole });
   };
+
 
   return (
     <div id="auth-screen">
