@@ -109,7 +109,7 @@ describe('decideNode (Contextual Bandit)', () => {
       const result = await decideNode(hostileDisputeEvent);
       expect(result.decision?.channel).toBe('none');
       expect(result.decision?.tier).toBe(0);
-      expect(result.decision?.actionReason).toContain('dispute');
+      expect(result.decision?.actionReason).toContain('Dispute');
     });
 
     it('adversarial: blocks all outbound contact when customer opts out / signals voluntary cancellation', async () => {
@@ -120,7 +120,7 @@ describe('decideNode (Contextual Bandit)', () => {
       const result = await decideNode(cancelSignalEvent);
       expect(result.decision?.channel).toBe('none');
       expect(result.decision?.tier).toBe(0);
-      expect(result.decision?.actionReason).toContain('Voluntary stop');
+      expect(result.decision?.actionReason).toContain('Opt-Out');
     });
 
     it('adversarial: enforces NPCI cap even with attemptCount >= 5 (overflow attempts)', async () => {

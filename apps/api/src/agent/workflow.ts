@@ -2,6 +2,7 @@ import { StateGraph, START, END } from '@langchain/langgraph';
 import { ChatAnthropic } from '@langchain/anthropic';
 import { ChatGroq } from '@langchain/groq';
 import { z } from 'zod';
+import { evaluateGuardrails } from './guardrails';
 
 // Define the state shape
 type AgentState = {
@@ -182,45 +183,19 @@ export const decideNode = async (state: AgentState) => {
   const amountPaise = state.event?.amountPaise || 0;
   const currentAttempts = state.event?.attemptCount || 1;
 
-  // Hard stop cases (Ethical & legal non-harassment)
-  if (rootCause === 'disputed_or_service_issue' || rootCause === 'voluntary_cancellation_signal') {
-    return { 
-      ...state, 
-      decision: { 
-        channel: 'none', 
-        tier: 0, 
-        actionReason: 'Voluntary stop or customer dispute signal detected' 
-      } 
+  // Evaluate declarative regulatory & ethical guardrails
+  const guardrailEvaluation = evaluateGuardrails({
+    rootCause,
+    eventType,
+    amountPaise,
+    attemptCount: currentAttempts
+  });
+
+  if (guardrailEvaluation.blocked && guardrailEvaluation.decision) {
+    return {
+      ...state,
+      decision: guardrailEvaluation.decision
     };
-  }
-
-  // REGULATORY GUARDRAIL 1: NPCI 4-Attempt Retry Cap (NPCI Circular No. 34 for recurring UPI mandates)
-  if (eventType === 'mandate_failed') {
-    if (currentAttempts >= 4) {
-      return {
-        ...state,
-        decision: {
-          channel: 'none',
-          tier: 0,
-          complianceBadge: 'NPCI Cap Reached (4/4)',
-          actionReason: 'NPCI Mandate Cap: Max 4 auto-debit attempts exhausted. Case paused.'
-        }
-      };
-    }
-  }
-
-  // REGULATORY GUARDRAIL 2: RBI ₹15,000 AFA Rule (RBI/2020-21/74)
-  // Auto-debit mandates over ₹15,000 (15,00,000 paise) require Additional Factor of Authentication (AFA/OTP).
-  // Auto-retry is non-compliant; we must route to fresh payment links or customer notification.
-  let forcedChannel: string | null = null;
-  let complianceBadge: string | undefined = undefined;
-
-  if (eventType === 'mandate_failed') {
-    complianceBadge = `NPCI Compliant · Attempt ${currentAttempts}/4`;
-    if (amountPaise >= 1500000) {
-      forcedChannel = 'payment_link_retry';
-      complianceBadge = `RBI AFA Rule (₹15K+) · ${complianceBadge}`;
-    }
   }
 
   // SMART HEURISTIC: Payday / Salary-Cycle Scheduling
@@ -234,19 +209,21 @@ export const decideNode = async (state: AgentState) => {
     scheduledFor = nextMonth.toISOString();
   }
 
-  // If forced by regulatory rule, return immediately with compliant channel
-  if (forcedChannel) {
+  // If forced by regulatory rule (e.g. RBI AFA for ₹15k+), return immediately with compliant channel
+  if (guardrailEvaluation.forcedChannel) {
     return {
       ...state,
       decision: {
-        channel: forcedChannel,
+        channel: guardrailEvaluation.forcedChannel,
         tier: 1,
-        complianceBadge,
+        complianceBadge: guardrailEvaluation.complianceBadge,
         scheduledFor,
-        actionReason: 'Enforced via RBI Circular RBI/2020-21/74 for transactions >= ₹15,000'
+        actionReason: guardrailEvaluation.actionReason
       }
     };
   }
+
+  const complianceBadge = guardrailEvaluation.complianceBadge;
 
   // Fetch performance parameters for this context (Thompson Sampling)
   let performances = await db.query.channelPerformance.findMany({

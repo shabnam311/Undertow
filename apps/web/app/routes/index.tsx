@@ -314,6 +314,14 @@ function QueueView() {
                       )}
                     </div>
                     <div className="tl-text">{run.reasoningSummary}</div>
+                    {run.outputSnapshot && (
+                      <details style={{ marginTop: '6px', fontSize: '11px', color: 'var(--color-text-3)', cursor: 'pointer' }}>
+                        <summary style={{ fontFamily: 'var(--mono)', color: 'var(--teal)' }}>Inspect Decision Trace JSON</summary>
+                        <pre style={{ background: 'rgba(0,0,0,0.3)', padding: '6px', borderRadius: '4px', overflowX: 'auto', marginTop: '4px', fontSize: '10px' }}>
+                          {JSON.stringify(run.outputSnapshot, null, 2)}
+                        </pre>
+                      </details>
+                    )}
                     <div className="tl-time">
                       {new Date(run.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} &middot; deterministic brake active
                     </div>
