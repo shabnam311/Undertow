@@ -1,4 +1,4 @@
-﻿import { Hono } from 'hono';
+import { Hono } from 'hono';
 import { trpcServer } from '@hono/trpc-server';
 import { razorpayWebhook } from './webhooks/razorpay';
 import { serve } from 'inngest/hono';
@@ -90,12 +90,6 @@ app.use(
 const port = Number(process.env.PORT) || 3001;
 
 console.log(`Undertow API server listening on 0.0.0.0:${port}`);
-
-Bun.serve({
-  port,
-  hostname: '0.0.0.0',
-  fetch: app.fetch,
-});
 
 export default {
   port,
