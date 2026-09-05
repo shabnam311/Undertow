@@ -87,12 +87,12 @@ app.use(
   })
 );
 
-const port = Number(process.env.PORT) || 3001;
+const port = parseInt(process.env.PORT || '3001', 10);
 
-console.log(`Undertow API server listening on 0.0.0.0:${port}`);
+console.log(`Undertow API server ready on port ${port}`);
 
 export default {
   port,
-  hostname: '0.0.0.0',
   fetch: app.fetch,
 };
+
