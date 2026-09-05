@@ -139,9 +139,8 @@ export function SettingsComponent() {
             <div className="settings-panel">
               <h4>API & Provider Keys</h4>
               <div className="desc">Provider keys are securely managed server-side.</div>
-              <div className="field"><label>Groq LPU (Primary Diagnostician)</label><div className="keyfield">gsk_••••••••••••4f2a <button onClick={() => showToast('Masked key')}>Copy</button></div></div>
-              <div className="field"><label>Anthropic Haiku (Resilient Fallback)</label><div className="keyfield">sk-ant-••••••••••88bd <button onClick={() => showToast('Masked key')}>Copy</button></div></div>
-              <div className="field"><label>Razorpay Webhook Secret</label><div className="keyfield">••••••••••••••••3f9c <button onClick={() => showToast('Masked key')}>Copy</button></div></div>
+              <div className="field"><label>Groq LPU (Zero-Latency Diagnostician)</label><div className="keyfield">gsk_••••••••••••4f2a <button onClick={() => showToast('Masked key')}>Copy</button></div></div>
+              <div className="field"><label>Razorpay Webhook Secret (HMAC-SHA256)</label><div className="keyfield">••••••••••••••••3f9c <button onClick={() => showToast('Masked key')}>Copy</button></div></div>
             </div>
           )}
 

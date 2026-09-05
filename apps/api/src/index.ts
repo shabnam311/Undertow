@@ -31,7 +31,6 @@ app.get('/health', async (c) => {
     services: {
       database: dbStatus,
       groq_lpu: process.env.GROQ_API_KEY ? 'configured' : 'missing',
-      anthropic_fallback: process.env.ANTHROPIC_API_KEY ? 'configured' : 'standby',
       inngest_orchestrator: process.env.INNGEST_EVENT_KEY ? 'active' : 'local_dev',
       razorpay_webhook_gate: process.env.RAZORPAY_WEBHOOK_SECRET ? 'active' : 'unconfigured',
     }

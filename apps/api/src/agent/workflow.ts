@@ -123,7 +123,7 @@ const diagnoseNode = async (state: AgentState) => {
         telemetry: { modelUsed: 'groq/llama-3.3-70b-versatile', latencyMs, tokenCostPaise: 0 }
       };
     } catch (groqErr) {
-      console.warn('Groq LPU diagnosis failed or rate-limited. Falling back to Anthropic Claude...', groqErr);
+      console.warn('Groq LPU diagnosis failed or rate-limited. Falling back to heuristic/secondary handler...', groqErr);
     }
   }
 
