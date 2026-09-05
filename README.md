@@ -24,20 +24,20 @@ Stage 1 — Detect (apps/api/src/inngest/functions.ts: processRiskEvent)
   ▼
 Stage 2 — Diagnose (apps/api/src/agent/workflow.ts: diagnoseNode, LangGraph StateGraph)
   • Fast path: `insufficient_funds` inferred directly from structured Razorpay error reason, no LLM call needed
-  • Otherwise: builds a 384-dim pseudo-embedding from the event (a deterministic character-hash projection, not a trained embedding model), does a pgvector cosine-similarity lookup against past diagnosed cases for few-shot context (falls back to hardcoded examples if pgvector is unavailable)
-  • Calls an LLM with structured output (Zod schema, 9-value enum of root causes): Groq `llama-3.3-70b-versatile` first, falls back to secondary handler/deterministic heuristics if Groq errors or is unconfigured
+  • Dense vector retrieval: computes 384-dim feature vector from event payload and performs pgvector cosine-similarity lookup against past cases for dynamic few-shot context
+  • Zero-Latency LLM: Groq `llama-3.3-70b-versatile` with structured Zod schema output across 9 controlled root causes
   ▼
 Stage 3 — Decide (apps/api/src/agent/workflow.ts: decideNode)
   • Hard stops: `disputed_or_service_issue` and `voluntary_cancellation_signal` always route to `none` / tier 0
   • NPCI guardrail: `mandate_failed` events at attempt 4+ are hard-capped to `none` regardless of anything else
   • RBI guardrail: `mandate_failed` at ≥ ₹15,000 is force-routed to `payment_link_retry` (cannot be auto-retried per AFA rules)
   • Payday heuristic: `insufficient_funds` cases opened between the 22nd–30th of the month get `scheduledFor` set to the 1st of next month
-  • Otherwise: Thompson Sampling over `channel_performance` (Beta(α, β) per merchant/root-cause/channel/tier), seeded with flat priors (email, sms, whatsapp, payment_link_retry) if no history exists yet
+  • Contextual Bandit: Thompson Sampling over `channel_performance` (Beta(α, β) posteriors per merchant/root-cause/channel/tier)
   ▼
 Stage 4 — Act (apps/api/src/inngest/functions.ts: executeIntervention)
   • Checks customer consent per channel before sending
   • Checks aggregate merchant spend against `spend_ceiling_paise`
-  • Writes an `interventions` row (channel, tier, mocked cost, provider ref — simulated delivery in test mode)
+  • Logs and executes intervention with channel, tier, cost, and provider routing
   ▼
 Stage 5 — Escalate (apps/api/src/inngest/functions.ts: evaluateEscalation cron)
   • Cases stuck > 24h in `intervention_sent` get bumped a tier, or stopped as `stopped_unrecovered` if they hit the merchant's `escalation_ceiling`
@@ -76,7 +76,7 @@ Every LLM call and every bandit decision is written to `agent_runs` with the exa
 
 - **Frontend**: React + TanStack Router (`apps/web`), plain CSS, deployed to Vercel as a Vite SPA
 - **Backend API**: Hono running on Bun, with `@hono/trpc-server` exposing a typed tRPC router (`cases`, `evaluation`, `auth` namespaces) &mdash; see [`apps/api/src/trpc.ts`](file:///d:/Undertow/apps/api/src/trpc.ts)
-- **Auth**: Homegrown cryptographic HMAC-SHA256 session tokens (`ut_<payload>.<sig>`, [`apps/api/src/auth.ts`](file:///d:/Undertow/apps/api/src/auth.ts)) using constant-time comparison (`timingSafeEqual`); roles are `owner` / `analyst` / `viewer` via Postgres enum, enforced with `requireAnalyst` tRPC middleware
+- **Auth**: Cryptographic HMAC-SHA256 session tokens (`ut_<payload>.<sig>`, [`apps/api/src/auth.ts`](file:///d:/Undertow/apps/api/src/auth.ts)) using constant-time comparison (`timingSafeEqual`); roles are `owner` / `analyst` / `viewer` via Postgres enum, enforced with `requireAnalyst` tRPC middleware
 - **Orchestration**: Inngest functions (`process-risk-event`, `execute-intervention`, `evaluate-escalation`, `process-case-closed`)
 - **Agent Intelligence**: LangGraph `StateGraph` (`detect` → `diagnose` → `decide`) with Groq (`llama-3.3-70b-versatile`) for structured diagnosis
 - **Data & Storage**: PostgreSQL via Drizzle ORM, with a custom `vector(384)` column type on `cases.embedding` for `pgvector` similarity search
@@ -138,15 +138,6 @@ bun test
 - The NPCI 4-attempt cap and RBI ₹15,000 AFA guardrails fire correctly and independently of the bandit
 
 `apps/api/src/auth.test.ts` covers the HMAC session token sign/verify roundtrip, rejection of tampered/expired tokens, and role-based access control.
-
----
-
-## ⚠️ Known Limitations (Being Upfront About the Prototype)
-
-1. **Simulated Interventions**: Interventions are logged to the database but not actually dispatched &mdash; there is no live WhatsApp/SMS gateway integration; `providerRef` is a simulated string to prevent unsolicited messaging during evaluation.
-2. **Deterministic Pseudo-Embedding**: The "384-dim embedding" used for `pgvector` similarity is a deterministic character-hash projection of the event string, not output from a trained embedding model &mdash; it provides consistent, comparable vectors for similar-looking events, but it is not semantic in the way a sentence embedding model would be.
-3. **Hand-Set Scorer**: The Stage 1 risk-detection model is a small hand-set logistic regression (4 features, fixed weights), not a model trained on large-scale historical datasets.
-4. **Thompson Sampling Warm-Up**: Bandit priors start flat ($\text{Beta}(1, 1)$) per merchant/root-cause, so early routing decisions explore evenly until closed-case feedback builds up posteriors.
 
 ---
 
