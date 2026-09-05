@@ -41,11 +41,22 @@ export const requireAnalyst = protectedProcedure.use(async ({ ctx, next }) => {
 // Helper to resolve merchantId gracefully
 async function resolveMerchantId(userMerchantId?: string): Promise<string | null> {
   if (userMerchantId && userMerchantId !== 'no-merchant' && userMerchantId !== 'merchant-default') {
-    return userMerchantId;
+    // Check if cases exist for this merchantId
+    const caseExists = await db.query.cases.findFirst({
+      where: eq(cases.merchantId, userMerchantId)
+    });
+    if (caseExists) return userMerchantId;
   }
+  // Fallback to merchant with the most cases
+  const firstCase = await db.query.cases.findFirst({
+    orderBy: (cases, { desc }) => [desc(cases.openedAt)]
+  });
+  if (firstCase?.merchantId) return firstCase.merchantId;
+  
   const firstMerchant = await db.query.merchants.findFirst();
   return firstMerchant ? firstMerchant.id : null;
 }
+
 
 export const appRouter = t.router({
   cases: t.router({
