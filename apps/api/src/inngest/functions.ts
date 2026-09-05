@@ -57,7 +57,7 @@ export const processRiskEvent = inngest.createFunction(
         caseId: event.data.caseId,
         nodeName: 'diagnose',
         reasoningSummary: `LLM identified root cause: ${state.diagnosis?.rootCause} with ${state.diagnosis?.confidence}% confidence`,
-        inputSnapshot: { event: event.data },
+        inputSnapshot: { event: event.data, fewShotContext: state.diagnosis?.fewShotContext },
         outputSnapshot: { diagnosis: state.diagnosis },
         modelUsed: state.telemetry?.modelUsed || 'groq/llama-3.3-70b-versatile',
         latencyMs: state.telemetry?.latencyMs || 180,

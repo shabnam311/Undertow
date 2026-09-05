@@ -148,7 +148,7 @@ razorpayWebhook.post('/', async (c) => {
         caseId: newCase.id,
         nodeName: 'diagnose',
         reasoningSummary: `Groq LPU identified root cause: ${rootCause} with ${confidence}% confidence based on bank code ${payment.error_code || 'BAD_REQUEST_ERROR'}`,
-        inputSnapshot: { event: body },
+        inputSnapshot: { event: body, fewShotContext: state.diagnosis?.fewShotContext },
         outputSnapshot: { diagnosis: state.diagnosis },
         modelUsed: state.telemetry?.modelUsed || 'groq/llama-3.3-70b-versatile',
         latencyMs: state.telemetry?.latencyMs || 140,

@@ -7,7 +7,7 @@ import { evaluateGuardrails } from './guardrails';
 // Define the state shape
 type AgentState = {
   event: any;
-  diagnosis?: { rootCause: string; confidence: number };
+  diagnosis?: { rootCause: string; confidence: number; fewShotContext?: string };
   decision?: { 
     channel: string; 
     tier: number; 
@@ -120,7 +120,7 @@ const diagnoseNode = async (state: AgentState) => {
       const latencyMs = Date.now() - startTime;
       return {
         ...state,
-        diagnosis: { rootCause: result.rootCause, confidence: result.confidence },
+        diagnosis: { rootCause: result.rootCause, confidence: result.confidence, fewShotContext },
         telemetry: { modelUsed: 'groq/llama-3.3-70b-versatile', latencyMs, tokenCostPaise: 0 }
       };
     } catch (groqErr) {
