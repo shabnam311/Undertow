@@ -2,41 +2,52 @@
 **Razorpay AI Buildathon 2026 — Track 03: AI Revenue Recovery**
 
 > **🌐 Live Demo (Instant Access, 1-Click Role Presets):** [https://undertow-web-flax.vercel.app/](https://undertow-web-flax.vercel.app/)  
-> **🩺 Production API & Health Status:** [https://undertow-production-c0b8.up.railway.app/health](https://undertow-production-c0b8.up.railway.app/health)  
+> **🩺 API Health Check:** [https://undertow-production-c0b8.up.railway.app/health](https://undertow-production-c0b8.up.railway.app/health)  
 > **⚡ 1-Click Production Demo Seeder:** [https://undertow-production-c0b8.up.railway.app/seed](https://undertow-production-c0b8.up.railway.app/seed)  
 > *Note for Evaluators: Any password is accepted with 1-click test role presets (Owner / Analyst / Viewer) on the login screen for instant evaluation.*
 
----
+Undertow watches a merchant's payment and billing surface for active revenue leakage — failed payments, abandoned checkouts, overdue B2B invoices, and failing UPI autopay mandates — diagnoses the likely root cause, and picks a recovery channel under hard spend and escalation limits. Every step is logged to an audit table so a merchant can see exactly why the agent did what it did.
 
-## 📌 Problem Statement
-Every merchant dashboard hides a quiet, persistent current of leaking revenue. In the Indian digital economy, failure is not a monolith—it fragments across four distinct surfaces: failed e-commerce payments, drop-offs at checkout, overdue B2B Net-30 invoices, and failing recurring UPI autopay mandates. Existing tools deploy naive, blind retries that irritate customers, trigger bank fraud blocks, violate NPCI retry caps, and waste SMS/WhatsApp messaging capital.
-
-Undertow is an autonomous, bounded, and fully auditable revenue recovery operating system. It ingests leakage signals, diagnoses the precise root cause using low-latency LLMs with dense vector retrieval, and executes Thompson-Sampling contextual recovery actions strictly bounded by merchant-defined spend ceilings and regulatory guardrails (NPCI Circular No. 34 & RBI ₹15,000 AFA rules).
+This README describes what is **actually implemented in this repository** (`apps/api`, `apps/web`, `packages/db`), not just the pitch. Where an implementation is a simplification of the full production idea, it is called out below.
 
 ---
 
-## 🛡️ What Broke & How We Resolved It (Security & Architecture Hardening)
+## 🏗️ What's Actually in the Pipeline
 
-During production hardening and security review, we identified and resolved two critical architectural vulnerabilities:
+```
+[ Razorpay Webhooks (apps/api/src/webhooks/razorpay.ts) ]
+  │ HMAC-SHA256 signature check (crypto.timingSafeEqual)
+  │ Idempotent insert on `risk_events.external_event_id`
+  ▼
+Stage 1 — Detect (apps/api/src/inngest/functions.ts: processRiskEvent)
+  • Small hand-set logistic regression (4 weights + bias) over event type + amount, sigmoid, threshold at p > 0.65
+  ▼
+Stage 2 — Diagnose (apps/api/src/agent/workflow.ts: diagnoseNode, LangGraph StateGraph)
+  • Fast path: `insufficient_funds` inferred directly from structured Razorpay error reason, no LLM call needed
+  • Otherwise: builds a 384-dim pseudo-embedding from the event (a deterministic character-hash projection, not a trained embedding model), does a pgvector cosine-similarity lookup against past diagnosed cases for few-shot context (falls back to hardcoded examples if pgvector is unavailable)
+  • Calls an LLM with structured output (Zod schema, 9-value enum of root causes): Groq `llama-3.3-70b-versatile` first, falls back to secondary handler/deterministic heuristics if Groq errors or is unconfigured
+  ▼
+Stage 3 — Decide (apps/api/src/agent/workflow.ts: decideNode)
+  • Hard stops: `disputed_or_service_issue` and `voluntary_cancellation_signal` always route to `none` / tier 0
+  • NPCI guardrail: `mandate_failed` events at attempt 4+ are hard-capped to `none` regardless of anything else
+  • RBI guardrail: `mandate_failed` at ≥ ₹15,000 is force-routed to `payment_link_retry` (cannot be auto-retried per AFA rules)
+  • Payday heuristic: `insufficient_funds` cases opened between the 22nd–30th of the month get `scheduledFor` set to the 1st of next month
+  • Otherwise: Thompson Sampling over `channel_performance` (Beta(α, β) per merchant/root-cause/channel/tier), seeded with flat priors (email, sms, whatsapp, payment_link_retry) if no history exists yet
+  ▼
+Stage 4 — Act (apps/api/src/inngest/functions.ts: executeIntervention)
+  • Checks customer consent per channel before sending
+  • Checks aggregate merchant spend against `spend_ceiling_paise`
+  • Writes an `interventions` row (channel, tier, mocked cost, provider ref — simulated delivery in test mode)
+  ▼
+Stage 5 — Escalate (apps/api/src/inngest/functions.ts: evaluateEscalation cron)
+  • Cases stuck > 24h in `intervention_sent` get bumped a tier, or stopped as `stopped_unrecovered` if they hit the merchant's `escalation_ceiling`
+  ▼
+Stage 6 — Learn (apps/api/src/inngest/functions.ts: processCaseClosed)
+  • Triggered on `payment.captured` / subscription charged / invoice paid webhooks
+  • Updates the Beta(α, β) posterior for the channel/tier/root-cause arm that was last tried, so future Thompson draws shift accordingly
+```
 
-1. **Vulnerability Identified: Insecure Client-Side Token Generation & Hardcoded Secrets**
-   - *The Problem:* The early prototype relied on client-side mock tokens and a permissive authorization fallback, which created the risk of unauthenticated bypass and privilege escalation.
-   - *Resolution:* Implemented server-side cryptographic HMAC-SHA256 session token generation and verification (`auth.ts`). Tokens are signed using `AUTH_SECRET`, encoded with an expiration timestamp (`exp`), and verified using constant-time comparison (`timingSafeEqual`) to prevent timing attacks. Tampered, expired, or malformed tokens are rejected with a strict 401 Unauthorized status.
-
-2. **Resolution Identified: Dual-Listen Process Conflict (`EADDRINUSE`) on Railway Deployment**
-   - *The Problem:* Bun runtime auto-serves modules exporting `{ port, fetch }`. The presence of an explicit `Bun.serve()` call in the file body caused an immediate second port-binding attempt inside the container, leading to process crashes on port 3001.
-   - *Resolution:* Eliminated duplicate `Bun.serve()` calls in `apps/api/src/index.ts`, parameterized port binding to dynamically respect Railway's assigned container port, and configured HTTP connection timeouts on serverless Neon Postgres connections to prevent hung promises.
-
----
-
-## 📊 Measured Benchmark Results (Batch Evaluation)
-
-Across a standardized 60-case benchmark batch across Indian consumer and B2B merchant transactions:
-- **Total Revenue at Risk:** ₹14,82,400 across 60 failure events
-- **Undertow Contextual Recovery Rate:** **61.7%** (₹9,14,600 recovered)
-- **Naive Blind Retry Baseline Recovery Rate:** **25.0%** (₹3,70,600 recovered)
-- **Net Recovered Uplift:** **+₹5,44,000 (+146.8% relative recovery uplift)**
-- **Recovery Cost per ₹ Recovered:** **₹0.0014** (messaging + LLM inference blended)
+Every LLM call and every bandit decision is written to `agent_runs` with the exact input/output JSON, the model used, and latency — this is the immutable audit trail that merchants inspect.
 
 ---
 
@@ -59,126 +70,58 @@ Across a standardized 60-case benchmark batch across Indian consumer and B2B mer
 - [x] `voluntary_cancellation_signal` — User opt-out / churn; **DETERMINISTIC HARD-STOP**
 - [x] `undiagnosable` — Ambiguous bank response code; conservative human escalation
 
-
 ---
 
-## 🎯 Alignment with Razorpay Judging Criteria
+## 🛠️ Stack (As Actually Used in the Code)
 
-| Axis | How Undertow Delivers |
-| :--- | :--- |
-| **1. Problem Taste** | Focuses strictly on multi-surface Indian merchant revenue leakage (e-commerce payments, checkout drop-offs, B2B net-30 invoices, and UPI autopay mandates) rather than generic cart-abandonment bots. |
-| **2. Build Quality** | Cryptographic HMAC-SHA256 webhook ingestion, constant-time verification, pgvector dense retrieval, immutable `agent_runs` audit trails, type-safe tRPC routes, and 100% test suite pass rate. |
-| **3. AI Judgment** | Uses LLMs strictly where unstructured reasoning adds value (root-cause classification with dense few-shot examples), while relying on **deterministic brakes** for compliance (spend ceilings, NPCI retry caps, hard stops for disputed claims). |
-| **4. Failure Recovery** | Ultra-low latency Groq LPU inference with deterministic heuristic fallback, database connection resilience, and full idempotency under webhook replays. |
-
----
-
-## 🚀 Key Innovations & Competitive Differentiators
-
-| Dimension | Naive Automation & Rule Bots | Undertow Recovery OS |
-| :--- | :--- | :--- |
-| **Scope of Leakage** | Single-channel e-commerce carts only | **Unified 4-Surface Ledger**: Payments, Dropped Checkouts, B2B Invoices, and Mandates |
-| **Risk Detection** | Fixed threshold or blind retries | **Interpretable Logistic Regression** scoring engine for zero-latency triage |
-| **Error Diagnosis** | Rigid error string matching | **LangGraph + Groq LPU** (`llama-3.3-70b-versatile`) with dynamic **`pgvector` cosine similarity** few-shot retrieval |
-| **Regulatory Guardrails** | Ignored / risks penalties | **NPCI 4-Attempt Retry Cap** (Circular No. 34) & **RBI ₹15,000 AFA Rule** (RBI/2020-21/74) |
-| **Smart Scheduling** | Blind instant dispatch | **Payday / Salary-Cycle Heuristic** (automatically schedules for 1st of month on month-end funds failures) |
-| **Channel Routing** | Static rule matrices / hardcoded cadences | **Thompson-Sampling Contextual Bandit** updating live Beta posteriors on recovery webhooks |
-| **Safety & Governance** | Unchecked LLM prompts | **Deterministic Brakes**: Spend ceilings, escalation ceilings, and hard vetoes on disputed claims |
-| **Orchestration** | Ephemeral cron jobs | **Durable Inngest Workflows** with immutable `agent_runs` audit trails in PostgreSQL |
-
----
-
-## 🏗️ System Architecture
-
-```
-[ Razorpay Webhooks / Synthetic Risk Stream ]
-                     │
-                     ▼
-  ┌────────────────────────────────────────────────────────┐
-  │  Stage 1: Ingestion & Idempotency Gate                 │
-  │  • HMAC-SHA256 Cryptographic Verification              │
-  │  • Database-level unique externalEventId constraint    │
-  └──────────────────────────┬─────────────────────────────┘
-                             │
-                             ▼
-  ┌────────────────────────────────────────────────────────┐
-  │  Stage 2: Zero-Latency Risk Detection                  │
-  │  • Pre-trained Logistic Regression inference           │
-  │  • Multi-feature dot product & operating point check   │
-  └──────────────────────────┬─────────────────────────────┘
-                             │
-                             ▼
-  ┌────────────────────────────────────────────────────────┐
-  │  Stage 3: Few-Shot Root Cause Diagnosis                │
-  │  • 384-dim normalized dense feature embedding          │
-  │  • pgvector Cosine Similarity retrieval from history   │
-  │  • Zero-Latency Engine: Groq Llama 3.3 (LPU)           │
-  │  • Deterministic Rule Fallback (Zero Downtime)         │
-  └──────────────────────────┬─────────────────────────────┘
-                             │
-                             ▼
-  ┌────────────────────────────────────────────────────────┐
-  │  Stage 4: Contextual Bandit Decision (Decide Node)     │
-  │  • Thompson Sampling over per-arm Beta distributions   │
-  │  • Regulatory Guardrails (NPCI 4-Cap & RBI AFA Link)   │
-  │  • Payday / Salary-Cycle Scheduling Heuristic          │
-  │  • Hard deterministic stops for disputed/cancellations │
-  └──────────────────────────┬─────────────────────────────┘
-                             │
-                             ▼
-  ┌────────────────────────────────────────────────────────┐
-  │  Stage 5: Bounded Action Execution & Escalation Loop   │
-  │  • Aggregate merchant spend ceiling validation         │
-  │  • Customer consent check (opt-out compliance)         │
-  │  • Evaluation against merchant escalation limits       │
-  └──────────────────────────┬─────────────────────────────┘
-                             │
-                             ▼
-  ┌────────────────────────────────────────────────────────┐
-  │  Stage 6: Real-Time Feedback & Control Plane           │
-  │  • Payment.captured webhook triggers positive reward   │
-  │  • Live React + TanStack Router Operations Queue       │
-  │  • Batch Evaluation Route against Naive Baseline       │
-  └────────────────────────────────────────────────────────┘
-```
-
----
-
-## 🛠️ Stack & Architectural Decisions
-
-- **Frontend**: React (Vite SPA) + TanStack Router + Tailwind CSS v4 + IBM Plex / Fraunces Typography
-- **Backend API**: Hono running on Bun with type-safe tRPC routes, rate limiting, and webhook endpoints
-- **Durable Orchestration**: Inngest for event-driven execution (`Detect ➔ Diagnose ➔ Decide ➔ Act ➔ Escalate`)
-- **Agent Intelligence**: LangGraph `StateGraph` + Groq (`llama-3.3-70b-versatile`) with structured JSON schema outputs
-- **Vector Search & ML**: PostgreSQL `pgvector(384)` with cosine distance (`<=>`), Logistic Regression, and Thompson Sampling (Beta priors)
-- **Database & ORM**: Neon Serverless Postgres via Drizzle ORM
+- **Frontend**: React + TanStack Router (`apps/web`), plain CSS, deployed to Vercel as a Vite SPA
+- **Backend API**: Hono running on Bun, with `@hono/trpc-server` exposing a typed tRPC router (`cases`, `evaluation`, `auth` namespaces) &mdash; see [`apps/api/src/trpc.ts`](file:///d:/Undertow/apps/api/src/trpc.ts)
+- **Auth**: Homegrown cryptographic HMAC-SHA256 session tokens (`ut_<payload>.<sig>`, [`apps/api/src/auth.ts`](file:///d:/Undertow/apps/api/src/auth.ts)) using constant-time comparison (`timingSafeEqual`); roles are `owner` / `analyst` / `viewer` via Postgres enum, enforced with `requireAnalyst` tRPC middleware
+- **Orchestration**: Inngest functions (`process-risk-event`, `execute-intervention`, `evaluate-escalation`, `process-case-closed`)
+- **Agent Intelligence**: LangGraph `StateGraph` (`detect` → `diagnose` → `decide`) with Groq (`llama-3.3-70b-versatile`) for structured diagnosis
+- **Data & Storage**: PostgreSQL via Drizzle ORM, with a custom `vector(384)` column type on `cases.embedding` for `pgvector` similarity search
+- **Deployment**: Backend API as a Docker container on Railway (`apps/api/src/index.ts`); frontend SPA on Vercel
 
 ---
 
 ## ⚡ Local Setup & Verification
 
+### 1. Prerequisites
+- [Bun](https://bun.sh/) v1.1+
+- PostgreSQL database with `pgvector` extension enabled (e.g., [Neon](https://neon.tech/))
+
+### 2. Configure Environment (`.env`)
 ```bash
-# 1. Clone & Install Dependencies
-git clone https://github.com/shabnam311/Undertow.git
-cd Undertow
-bun install
+NODE_ENV=development
+PORT=3001
+DATABASE_URL="postgresql://user:password@your-neon-host/neondb?sslmode=require"
+GROQ_API_KEY="gsk_..."
+RAZORPAY_WEBHOOK_SECRET="your_shared_webhook_secret"
+INNGEST_EVENT_KEY="your-inngest-event-key"
+INNGEST_SIGNING_KEY="your-inngest-signing-key"
+```
+*Note: `AUTH_SECRET` is optional in development (a fallback secret is provided) but is required in production where the app strictly enforces it.*
 
-# 2. Configure Environment (.env)
-cp .env.example .env
-
-# 3. Apply Migrations & Seed 60 Realistic Cases
+### 3. Apply Migrations & Seed Data
+```bash
 cd packages/db
 bun run drizzle-kit push --force
+# Seeds 1 merchant + 60 synthetic cases spread across all 9 root causes
+# (payment_failed / checkout_abandoned / mandate_failed / invoice_overdue),
+# with realistic status/intervention/stop-event history.
 bun run scripts/generate.ts
+```
 
-# 4. Run Development Servers
-cd ../..
+### 4. Launch
+```bash
+# From the repository root
 bun run dev
 ```
 
-- **Operations Dashboard**: `http://localhost:3000`
-- **Batch Evaluation Route**: `http://localhost:3000/evaluation`
-- **API Health Check**: `http://localhost:3001/health`
+- **Operations Dashboard (Recovery Queue)**: `http://localhost:3000`
+- **Batch Evaluation Route**: `http://localhost:3000/evaluation` &mdash; recovery-rate and cost-per-recovered-₹ comparison against a single-channel baseline, computed directly from the seeded batch
+- **Settings**: `http://localhost:3000/settings` &mdash; merchant spend/escalation ceiling config
+- **API & Webhook Receiver**: `http://localhost:3001` (Health check: `http://localhost:3001/health`)
 
 ---
 
@@ -188,32 +131,48 @@ bun run dev
 bun test
 ```
 
-- `(pass)` Cryptographic Authentication > signs and verifies a valid session token successfully
-- `(pass)` Cryptographic Authentication > rejects tampered tokens where signature does not match payload
-- `(pass)` Cryptographic Authentication > rejects tokens signed with a different secret
-- `(pass)` Cryptographic Authentication > rejects malformed tokens without ut_ prefix or improper format
-- `(pass)` Cryptographic Authentication > rejects expired tokens
-- `(pass)` Cryptographic Authentication > correctly models RBAC permissions across owner, analyst, and viewer
-- `(pass)` Contextual Bandit > routes `disputed_or_service_issue` to `none` tier 0 deterministically
-- `(pass)` Contextual Bandit > routes `voluntary_cancellation_signal` to `none` tier 0 deterministically
-- `(pass)` Contextual Bandit > samples from fallback arms when no prior data exists
-- `(pass)` Contextual Bandit > strongly prefers arms with high successes (alpha) over failures (beta)
-- `(pass)` Contextual Bandit > enforces NPCI 4-attempt cap on recurring mandates
-- `(pass)` Contextual Bandit > enforces RBI ₹15,000 AFA rule by routing to payment_link_retry
+`apps/api/src/agent/workflow.test.ts` covers `decideNode` directly (mocking the DB layer) and asserts:
+- `disputed_or_service_issue` and `voluntary_cancellation_signal` deterministically route to `none` / tier 0 without touching the bandit
+- With no channel-performance history, sampling still returns one of the four default arms
+- Given a heavily skewed `Beta(100,1)` vs `Beta(1,100)` prior, Thompson Sampling picks the stronger arm in the large majority of draws (asserts > 45/50)
+- The NPCI 4-attempt cap and RBI ₹15,000 AFA guardrails fire correctly and independently of the bandit
+
+`apps/api/src/auth.test.ts` covers the HMAC session token sign/verify roundtrip, rejection of tampered/expired tokens, and role-based access control.
 
 ---
 
-## ⚠️ Known Limitations & Failure Recovery (Architecture Disclosures)
+## ⚠️ Known Limitations (Being Upfront About the Prototype)
 
-1. **Free-Tier Host Cold Starts**: Serverless database (Neon) and API endpoints (Railway) may experience a brief initial wake-up latency (~3-5 seconds) after prolonged idle periods. The frontend incorporates graceful loading states and resilient token handling to ensure zero UI freezes.
-2. **LLM Engine & Graceful Fallbacks**: Undertow leverages Groq LPU (`llama-3.3-70b-versatile`) for <200ms root-cause diagnostics. If external network timeouts occur, the pipeline falls back automatically to deterministic heuristics so no customer payment remains undiagnosed.
-3. **Channel Delivery in Test Mode**: Real delivery is fully active for Email (Resend) and Webhook Link Retries; SMS and WhatsApp channels run in simulated test mode to prevent unsolicited messaging during evaluation.
-4. **Token Storage vs CSRF Tradeoff**: Auth session tokens use signed HMAC-SHA256 bearer tokens stored in `localStorage` + `Authorization` headers. This completely eliminates CSRF vulnerabilities, but frontend state is guarded against XSS via strict input sanitization and zero dynamic `eval`/`dangerouslySetInnerHTML`.
-5. **Bandit Exploration Warm-up**: In fresh merchant environments with no priors, the Thompson Sampling algorithm starts with uniform $\text{Beta}(1, 1)$ distributions before converging to optimal channels as recovery webhooks are received.
-6. **Evaluator Authentication Mode**: In this buildathon release, role-based access control (Owner, Analyst, Viewer) is unlocked with 1-click test presets and demo authentication so evaluators can inspect permissions and trigger approvals with zero barrier to entry.
+1. **Simulated Interventions**: Interventions are logged to the database but not actually dispatched &mdash; there is no live WhatsApp/SMS gateway integration; `providerRef` is a simulated string to prevent unsolicited messaging during evaluation.
+2. **Deterministic Pseudo-Embedding**: The "384-dim embedding" used for `pgvector` similarity is a deterministic character-hash projection of the event string, not output from a trained embedding model &mdash; it provides consistent, comparable vectors for similar-looking events, but it is not semantic in the way a sentence embedding model would be.
+3. **Hand-Set Scorer**: The Stage 1 risk-detection model is a small hand-set logistic regression (4 features, fixed weights), not a model trained on large-scale historical datasets.
+4. **Thompson Sampling Warm-Up**: Bandit priors start flat ($\text{Beta}(1, 1)$) per merchant/root-cause, so early routing decisions explore evenly until closed-case feedback builds up posteriors.
 
 ---
 
-## 👥 Authors & Team
+## 📁 Repository Structure
+
+```
+apps/
+  api/src/
+    agent/workflow.ts      # LangGraph detect/diagnose/decide graph + bandit logic
+    inngest/functions.ts   # Durable orchestration + cron escalation loops
+    webhooks/razorpay.ts   # Signed, idempotent webhook ingestion
+    trpc.ts                # cases / evaluation / auth routers
+    auth.ts                # HMAC session tokens + RBAC middleware
+  web/app/routes/
+    index.tsx              # Recovery queue dashboard & detail drawer
+    evaluation.tsx         # Batch evaluation vs. naive baseline
+    settings.tsx           # Spend/escalation ceiling config
+    login.tsx              # Split-pane login with 1-click test role presets
+packages/
+  db/
+    schema.ts              # Drizzle schema incl. pgvector column & Beta bandit table
+    scripts/generate.ts    # Synthetic 60-case seed generator
+```
+
+---
+
+## 👥 License & Authors
 - **Shabnam** &mdash; *Undertow Architecture & Engineering*
-- **License**: MIT
+- **License**: MIT © 2026 Shabnam
