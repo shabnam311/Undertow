@@ -27,7 +27,6 @@ function RootComponent() {
         setUser(JSON.parse(stored));
       }
     } catch (e) {}
-    setAuthChecked(true);
   }, [location.pathname, isAuthPage]);
 
   const handleLogout = () => {
